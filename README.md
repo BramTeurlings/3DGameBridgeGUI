@@ -15,3 +15,10 @@ The API features the following endpoints:
 
 ## Additional information
 For any questions or contributions you may have, please refer to our Discord server.
+
+### Related Projects
+3D Game Bridge Projects:
+https://github.com/JoeyAnthony/3DGameBridgeProjects
+
+3D Game Bridge Wrapper:
+https://github.com/BramTeurlings/3DGameBridge
