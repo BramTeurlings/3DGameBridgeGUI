@@ -3,7 +3,7 @@
 
 #include "wmicommunication.h"
 
-namespace gamebridge {
+namespace game_bridge {
     WMICommunication wmi("");
 
     GAME_BRIDGE_API void init_api()

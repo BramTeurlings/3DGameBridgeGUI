@@ -11,9 +11,14 @@ src/configuration.h
 src/configuration.cpp
 src/app.h
 src/app.cpp
+src/file_functions.h
+src/file_functions.cpp
 )
 
 set_target_properties(InjectionCLI PROPERTIES LINKER_LANGUAGE CXX)
+
+set(nlohmann_json_INCLUDE "${CMAKE_SOURCE_DIR}/third-party/json/include/json/include")
+target_include_directories(InjectionCLI PRIVATE ${nlohmann_json_INCLUDE})
 
 # target_link_libraries(InjectionCLI PRIVATE 3DGameBridgeApi)
 
