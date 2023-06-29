@@ -5,7 +5,5 @@ namespace game_bridge {
     {
         InitializeConfiguration();
         supported_games = LoadConfiguration();
-
-
     }
 }
