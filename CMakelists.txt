@@ -5,3 +5,4 @@ set (CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(game_bridge_api)
 add_subdirectory(game_bridge_gui)
+add_subdirectory(game_bridge_injection_cli)
