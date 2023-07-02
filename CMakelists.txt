@@ -4,6 +4,6 @@ project (3DGameBridgeGUI VERSION 0.1)
 set (CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(game_bridge_api)
+add_subdirectory(gb_sys)
 add_subdirectory(game_bridge_gui)
 add_subdirectory(game_bridge_injection_cli)
-add_subdirectory(gb_sys)

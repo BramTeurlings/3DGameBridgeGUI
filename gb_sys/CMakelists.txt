@@ -10,6 +10,8 @@ src/dllmain.cpp
 src/framework.h
 src/pch.h
 src/pch.cpp
+src/hooks.h
+src/hooks.cpp
 # src/gamebridgeapi.h
 # src/gamebridgeapi.cpp
 )
