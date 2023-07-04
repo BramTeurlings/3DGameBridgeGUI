@@ -11,10 +11,7 @@ src/framework.h
 src/pch.h
 src/pch.cpp
 src/hooks.h
-src/hooks.cpp
-# src/gamebridgeapi.h
-# src/gamebridgeapi.cpp
-)
+src/hooks.cpp )
 
 target_compile_definitions(GameBridgeSys PUBLIC GAME_BRIDGE_API_EXPORTS)
 set_target_properties(GameBridgeSys PROPERTIES LINKER_LANGUAGE CXX)
