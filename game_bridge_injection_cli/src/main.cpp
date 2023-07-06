@@ -64,5 +64,6 @@ int main(int argc, char* argv[])
     }
 
     game_bridge::GameBridgeInjectionCLI application;
+
     InjectIntoApplication(GetPID(""), simulated_reality_bin_path);
 }

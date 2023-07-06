@@ -1,6 +1,8 @@
 #include "app.h"
-#include "gamebridgeapi.h"
 #include <Windows.h>
+
+#include "gamebridgeapi.h"
+#include "process_injection.h"
 
 namespace game_bridge {
     GameBridgeInjectionCLI::GameBridgeInjectionCLI()

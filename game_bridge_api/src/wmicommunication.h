@@ -1,7 +1,7 @@
 #pragma once
-#include <Windows.h>
+#define _WIN32_DCOM
 #include <Wbemidl.h>
-#include <stdint.h>
+
 #include <string>
 #include <vector>
 
