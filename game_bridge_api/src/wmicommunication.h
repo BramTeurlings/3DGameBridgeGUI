@@ -2,6 +2,8 @@
 #include <Windows.h>
 #include <Wbemidl.h>
 
+// Todo figure out this code more
+
 class EventSink : public IWbemObjectSink
 {
     LONG m_lRef;

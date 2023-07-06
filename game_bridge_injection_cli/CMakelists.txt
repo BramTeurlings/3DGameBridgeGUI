@@ -5,8 +5,8 @@ add_executable(InjectionCLI
 src/main.cpp
 src/process_injection.h
 src/process_injection.cpp
-src/process_detection.h
-src/process_detection.cpp
+# src/process_detection.h
+# src/process_detection.cpp
 src/configuration.h
 src/configuration.cpp
 src/app.h
@@ -18,7 +18,7 @@ src/file_functions.cpp
 set_target_properties(InjectionCLI PROPERTIES LINKER_LANGUAGE CXX)
 
 # Link hooks
-#target_link_libraries(InjectionCLI PRIVATE GameBridgeSys)
+# target_link_libraries(InjectionCLI PRIVATE GameBridgeSys)
 
 # Link Json
 set(nlohmann_json_INCLUDE "${CMAKE_SOURCE_DIR}/third-party/json/include/json/include")
