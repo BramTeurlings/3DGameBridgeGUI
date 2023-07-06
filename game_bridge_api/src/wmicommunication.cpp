@@ -1,8 +1,8 @@
 #include "wmicommunication.h"
-#include <Windows.h>
+
+//#define _WIN32_DCOM
 #include <iostream>
 #include <comdef.h>
-
 #pragma comment(lib, "wbemuuid.lib")
 
 ULONG EventSink::AddRef()
@@ -29,24 +29,72 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
     else return E_NOINTERFACE;
 }
 
+//HRESULT EventSink::Indicate(long lObjectCount,
+//    IWbemClassObject** apObjArray)
+//{
+//    HRESULT hres = S_OK;
+//
+//    for (int i = 0; i < lObjectCount; i++)
+//    {
+//        SAFEARRAY arr;
+//        VARIANT* value = new VARIANT;
+//        BSTR strClassProp = SysAllocString(L"Name");
+//
+//        HRESULT hres = apObjArray[i]->Get(strClassProp, 0, value, NULL, 0);
+//        if (hres == ERROR_SUCCESS) {
+//
+//            VariantClear(value);
+//        }
+//        printf("Event occurred\n");
+//    }
+//
+//    return WBEM_S_NO_ERROR;
+//}
 
-HRESULT EventSink::Indicate(long lObjectCount,
-    IWbemClassObject** apObjArray)
+HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
-    HRESULT hres = S_OK;
-
-    for (int i = 0; i < lObjectCount; i++)
+    for (LONG i = 0; i < lObjectCount; i++)
     {
-        SAFEARRAY arr;
-        VARIANT* value = new VARIANT;
-        BSTR strClassProp = SysAllocString(L"Name");
+        VARIANT vtProp;
+        HRESULT hres = apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0);
+        if (SUCCEEDED(hres) && vtProp.vt == VT_UNKNOWN && vtProp.punkVal != nullptr)
+        {
+            IWbemClassObject* pProcessObj = nullptr;
+            hres = vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj));
+            if (SUCCEEDED(hres))
+            {
+                VARIANT vtProcessId;
+                hres = pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0);
+                if (SUCCEEDED(hres) && vtProcessId.vt == VT_I4)
+                {
+                    DWORD processId = vtProcessId.intVal;
 
-        HRESULT hres = apObjArray[i]->Get(strClassProp, 0, value, NULL, 0);
-        if (hres == ERROR_SUCCESS) {
+                    VARIANT vtName;
+                    hres = pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0);
+                    if (SUCCEEDED(hres) && vtName.vt == VT_BSTR)
+                    {
+                        std::wcout << L"Process ID: " << processId << std::endl;
+                        std::wcout << L"Executable Path: " << vtName.bstrVal << std::endl;
 
-            VariantClear(value);
+                        // Get the main window handle of the process
+                        HWND hWnd = FindWindowW(nullptr, vtName.bstrVal);
+                        if (hWnd != nullptr)
+                        {
+                            std::cout << "Window handle: " << hWnd << std::endl;
+                        }
+                        else
+                        {
+                            std::cerr << "Failed to find the main window handle." << std::endl;
+                        }
+                    }
+                }
+
+                pProcessObj->Release();
+            }
         }
-        printf("Event occurred\n");
+
+        VariantClear(&vtProp);
+        apObjArray[i]->Release();
     }
 
     return WBEM_S_NO_ERROR;

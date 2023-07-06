@@ -1,7 +1,14 @@
 #include "file_functions.h"
 #include "app.h"
 
+#include <Windows.h>
+#include <iostream>
 
+typedef void (*InstallHookFunc)();
+typedef void (*UninstallHookFunc)();
+
+static HINSTANCE hModule;
+static HHOOK hhookSysMsg;
 
 /*
  * Todo:
@@ -13,10 +20,6 @@
  *
  * Menu?
  */
-
-// command_line_arguments.cpp
-// compile with: /EHsc
-#include <iostream>
 
 using namespace std;
 int main(int argc,      // Number of strings in array argv
