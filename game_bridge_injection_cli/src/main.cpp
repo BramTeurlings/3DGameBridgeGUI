@@ -3,12 +3,8 @@
 
 #include <Windows.h>
 #include <iostream>
-
-typedef void (*InstallHookFunc)();
-typedef void (*UninstallHookFunc)();
-
-static HINSTANCE hModule;
-static HHOOK hhookSysMsg;
+#include <regex>
+#include "process_injection.h"
 
 /*
  * Todo:
@@ -22,33 +18,51 @@ static HHOOK hhookSysMsg;
  */
 
 using namespace std;
-int main(int argc,      // Number of strings in array argv
-    char* argv[],   // Array of command-line argument strings
-    char* envp[])  // Array of environment variable strings
+int main(int argc, char* argv[])
 {
-    int count;
-    // Display each command-line argument.
-    //cout << "\nCommand-line arguments:\n";
-    for (count = 0; count < argc; count++) {
-        //cout << "  argv[" << count << "]   " << argv[count] << "\n";
-    }
+    //int count;
+    //// Display each command-line argument.
+    ////cout << "\nCommand-line arguments:\n";
+    //for (count = 0; count < argc; count++) {
+    //    cout << "  argv[" << count << "]   " << argv[count] << "\n";
+    //}
 
-    bool numberLines = false;    // Default is no line numbers.
+    //bool numberLines = false;    // Default is no line numbers.
 
-    // If /n is passed to the .exe, display numbered listing
-    // of environment variables.
-    if ((argc == 2) && _stricmp(argv[1], "/n") == 0) {
-        numberLines = true;
-    }
+    //// If /n is passed to the .exe, display numbered listing
+    //// of environment variables.
+    //if ((argc == 2) && _stricmp(argv[1], "/n") == 0) {
+    //    numberLines = true;
+    //}
 
-    // Walk through list of strings until a NULL is encountered.
-    for (int i = 0; envp[i] != NULL; ++i)
+
+    std::string game_name = "Journey.exe";
+
+    
+    std::regex path_regex("^Path");
+    std::string path_environment_variable = std::getenv("PATH");
+    //std::cout << path_environment_variable << "\n";
+
+    std::regex path_search_regex("[a-zA-Z0-9+_\\-\\.:%()\\s\\\\]+");
+    std::smatch match_results;
+    std::regex_search(path_environment_variable, match_results, path_search_regex);
+
+    auto words_begin = std::sregex_iterator(path_environment_variable.begin(), path_environment_variable.end(), path_search_regex);
+    auto words_end = std::sregex_iterator();
+
+    std::string simulated_reality_bin_path;
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i)
     {
-        if (numberLines) {
-            //cout << i << ": "; // Prefix with numbers if /n specified
+        std::smatch match = *i;
+        std::string match_str = match.str();
+        std::cout << match_str << '\n';
+        if(match_str.find("Simulated Reality") != std::string::npos)
+        {
+            simulated_reality_bin_path = match_str;
+            break;
         }
-        //cout << envp[i] << "\n";
     }
 
     game_bridge::GameBridgeInjectionCLI application;
+    InjectIntoApplication(GetPID(""), simulated_reality_bin_path);
 }

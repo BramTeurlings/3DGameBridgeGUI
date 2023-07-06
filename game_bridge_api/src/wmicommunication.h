@@ -1,8 +1,18 @@
 #pragma once
 #include <Windows.h>
 #include <Wbemidl.h>
+#include <stdint.h>
+#include <string>
+#include <vector>
 
 // Todo figure out this code more
+
+struct Win32ProcessData
+{
+    uint32_t pid;
+    std::string executable_path;
+};
+inline std::vector<Win32ProcessData> message_queue;
 
 class EventSink : public IWbemObjectSink
 {

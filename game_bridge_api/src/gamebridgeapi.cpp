@@ -4,6 +4,7 @@
 #include "wmicommunication.h"
 
 namespace game_bridge {
+    // Todo put this somewhere else
     WMICommunication wmi("");
 
     GAME_BRIDGE_API void init_api()

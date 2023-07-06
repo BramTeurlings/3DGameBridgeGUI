@@ -33,6 +33,8 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
     for (LONG i = 0; i < lObjectCount; i++)
     {
+        Win32ProcessData process_data;
+
         VARIANT vtProp;
         HRESULT hres = apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0);
         if (SUCCEEDED(hres) && vtProp.vt == VT_UNKNOWN && vtProp.punkVal != nullptr)
@@ -41,39 +43,65 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
             hres = vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj));
             if (SUCCEEDED(hres))
             {
+                // Get process data
                 VARIANT vtProcessId;
                 hres = pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0);
                 if (SUCCEEDED(hres) && vtProcessId.vt == VT_I4)
                 {
-                    DWORD processId = vtProcessId.intVal;
-
-                    VARIANT vtName;
-                    hres = pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0);
-                    if (SUCCEEDED(hres) && vtName.vt == VT_BSTR)
-                    {
-                        std::wcout << L"Process ID: " << processId << std::endl;
-                        std::wcout << L"Executable Path: " << vtName.bstrVal << std::endl;
-
-                        // Get the main window handle of the process
-                        HWND hWnd = FindWindowW(nullptr, vtName.bstrVal);
-                        if (hWnd != nullptr)
-                        {
-                            std::cout << "Window handle: " << hWnd << std::endl;
-                        }
-                        else
-                        {
-                            std::cerr << "Failed to find the main window handle." << std::endl;
-                        }
-                    }
+                    process_data.pid = vtProcessId.intVal;
                 }
 
+                // Get process id int
+
+                VARIANT vtName;
+                hres = pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0);
+                if (FAILED(hres) && vtName.vt == VT_BSTR)
+                {
+                    size_t char_number = 0;
+                    std::wstring wexe_path (vtName.bstrVal);
+                    CHAR exe_path[MAX_PATH];
+                    errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
+                    if (err != EINVAL)
+                    {
+                        process_data.executable_path = exe_path;
+                    }
+                    else
+                    {
+                        wprintf(L"Process detection: Couldn't convert executable path to wstring");
+                    }
+
+                }
+
+                // Delete process object
                 pProcessObj->Release();
             }
+
+            // Delete variant
+            VariantClear(&vtProp);
         }
 
-        VariantClear(&vtProp);
+        if(process_data.pid > 0 && !process_data.executable_path.empty())
+        {
+            message_queue.push_back(process_data);
+        }
+        else
+        {
+            wprintf(L"Couldn't enqueue message from wmi");
+        }
+
         apObjArray[i]->Release();
+
+        //// Get the main window handle of the process
+        //HWND hWnd = FindWindowW(nullptr, vtName.bstrVal);
+        //if (hWnd != nullptr)
+        //{
+        //    std::cout << "Window handle: " << hWnd << std::endl;
+        //}
+        //else
+        //{
+        //    std::cerr << "Failed to find the main window handle." << std::endl;
     }
+
 
     return WBEM_S_NO_ERROR;
 }
