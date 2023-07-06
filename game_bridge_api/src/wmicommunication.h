@@ -1,6 +1,8 @@
 #pragma once
-#define _WIN32_DCOM
+#include <Windows.h>
 #include <Wbemidl.h>
+
+// Todo figure out this code more
 
 class EventSink : public IWbemObjectSink
 {
@@ -16,10 +18,7 @@ public:
     virtual HRESULT
         STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv);
 
-    virtual HRESULT STDMETHODCALLTYPE Indicate(
-        LONG lObjectCount,
-        IWbemClassObject __RPC_FAR* __RPC_FAR* apObjArray
-    );
+    virtual HRESULT Indicate(LONG lObjectCount, IWbemClassObject** apObjArray);
 
     virtual HRESULT STDMETHODCALLTYPE SetStatus(
         /* [in] */ LONG lFlags,

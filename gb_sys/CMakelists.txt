@@ -1,0 +1,54 @@
+cmake_minimum_required(VERSION 3.23)
+
+project (GameBridgeSys VERSION 0.1)
+message("3D Game Bridge System Dll Version: ${GameBridgeSys_VERSION}")
+
+set(CMAKE_DEBUG_POSTFIX d)
+
+add_library(GameBridgeSys SHARED
+src/dllmain.cpp
+src/framework.h
+src/pch.h
+src/pch.cpp
+src/hooks.h
+src/hooks.cpp )
+
+target_compile_definitions(GameBridgeSys PUBLIC GAME_BRIDGE_API_EXPORTS)
+set_target_properties(GameBridgeSys PROPERTIES LINKER_LANGUAGE CXX)
+
+set_target_properties(GameBridgeSys PROPERTIES PUBLIC_HEADER src/gamebridge.h)
+
+install(TARGETS GameBridgeSys
+        EXPORT GameBridgeSysTargets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        PUBLIC_HEADER DESTINATION include)
+
+install(EXPORT GameBridgeSysTargets
+		FILE GameBridgeSysTargets.cmake
+		DESTINATION lib/cmake/GameBridgeSys
+)
+
+target_include_directories(GameBridgeSys INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+	$<INSTALL_INTERFACE:include>
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/GameBridgeSysConfig.cmake
+    INSTALL_DESTINATION lib/cmake/GameBridgeSys
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/GameBridgeSysConfigVersion.cmake"
+  VERSION "${GameBridgeSys_VERSION}"
+  COMPATIBILITY AnyNewerVersion
+)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/GameBridgeApiConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/GameBridgeConfigApiVersion.cmake
+  DESTINATION lib/cmake/GameBridgeSys
+)
