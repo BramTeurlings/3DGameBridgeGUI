@@ -29,28 +29,6 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
     else return E_NOINTERFACE;
 }
 
-//HRESULT EventSink::Indicate(long lObjectCount,
-//    IWbemClassObject** apObjArray)
-//{
-//    HRESULT hres = S_OK;
-//
-//    for (int i = 0; i < lObjectCount; i++)
-//    {
-//        SAFEARRAY arr;
-//        VARIANT* value = new VARIANT;
-//        BSTR strClassProp = SysAllocString(L"Name");
-//
-//        HRESULT hres = apObjArray[i]->Get(strClassProp, 0, value, NULL, 0);
-//        if (hres == ERROR_SUCCESS) {
-//
-//            VariantClear(value);
-//        }
-//        printf("Event occurred\n");
-//    }
-//
-//    return WBEM_S_NO_ERROR;
-//}
-
 HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
     for (LONG i = 0; i < lObjectCount; i++)
