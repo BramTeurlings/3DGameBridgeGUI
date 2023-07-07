@@ -1,4 +1,5 @@
 #pragma once
+#include "wmicommunication.h"
 
 #ifdef GAME_BRIDGE_API_EXPORTS
 #define GAME_BRIDGE_API __declspec(dllexport)

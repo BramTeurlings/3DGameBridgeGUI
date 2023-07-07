@@ -46,7 +46,7 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
     {
         Win32ProcessData process_data;
 
-		VARIANT vtProp;
+        VARIANT vtProp;
 		HRESULT hres = apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0);
 		if (SUCCEEDED(hres) && vtProp.vt == VT_UNKNOWN && vtProp.punkVal != nullptr)
 		{
@@ -93,8 +93,8 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 
 		if (process_data.pid > 0 && !process_data.executable_path.empty())
 		{
-			message_queue.push_back(process_data);
-			std::cout << "pid: " << process_data.pid << " path: " << process_data.executable_path << "\n";
+			message_queue.push(process_data);
+            semaphore_message_queue.notify();
 		}
 		else
 		{
