@@ -11,5 +11,6 @@ namespace game_bridge
 
     public:
         GameBridgeInjectionCLI();
+        void RunAutomaticInjector(std::string sr_binary_path);
     };
 }

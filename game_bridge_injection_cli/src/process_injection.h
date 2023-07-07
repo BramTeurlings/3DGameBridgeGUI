@@ -54,6 +54,6 @@ static void update_acl_for_uwp(LPWSTR path);
 static DWORD WINAPI loading_thread_func(loading_data* arg);
 #endif
 
-
-int InjectIntoApplication(uint32_t pid, std::string sr_binary_path, uint32_t sleep_time = 50);
+int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit = false);
+int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time = 50);
 int GetPID(std::string process_name);

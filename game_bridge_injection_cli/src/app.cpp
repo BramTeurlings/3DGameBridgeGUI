@@ -13,6 +13,11 @@ namespace fs = std::filesystem;
 namespace game_bridge {
     GameBridgeInjectionCLI::GameBridgeInjectionCLI()
     {
+
+	}
+
+    void GameBridgeInjectionCLI::RunAutomaticInjector(std::string sr_binary_path)
+    {
         // Load configuration
         InitializeConfiguration();
         supported_games = LoadConfiguration();
@@ -30,6 +35,9 @@ namespace game_bridge {
             executable_names.push_back(config.exe_name);
         }
 
+        loading_data payload_64_bit;
+        CreatePayload(sr_binary_path, payload_64_bit);
+
         // Keep the app running
         while (true) {
             process_detection.pSink->semaphore_message_queue.wait();
@@ -39,13 +47,13 @@ namespace game_bridge {
 
             fs::path detected_exe(process_data.executable_path);
             std::string filename = detected_exe.filename().string();
-          
 
-			std::for_each(executable_names.begin(), executable_names.end(), [&](std::string a) {
-				if (filename.compare(a) == 0) {
-                    
-				}
-			});
-		}
-	}
+            std::for_each(executable_names.begin(), executable_names.end(), [&](std::string a) {
+                if (filename.compare(a) == 0) {
+                    std::cout << "Found supported game, start injection" << "\n";
+                    InjectIntoApplication(process_data.pid, payload_64_bit);
+                }
+                });
+        }
+    }
 }

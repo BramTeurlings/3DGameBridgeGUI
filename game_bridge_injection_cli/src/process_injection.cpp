@@ -2,6 +2,9 @@
 #include <string>
 #include <iostream>
 
+loading_data x32_injection_data;
+loading_data x64_injection_data;
+
 static void update_acl_for_uwp(LPWSTR path)
 {
 	OSVERSIONINFOEX verinfo_windows7 = { sizeof(OSVERSIONINFOEX), 6, 1 };
@@ -55,13 +58,98 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 	}
 	return err;
 }
+
+int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit)
+{
+	size_t num_dlls = NUM_DLLS;
+	std::wstring reshade_dll_name;
+
+	// Select 32 or 64 bit dll
+	if(use_32_bit)
+	{
+		num_dlls = 1;
+		reshade_dll_name = L"ReShade32.dll";
+	}
+	else
+	{
+		num_dlls = NUM_DLLS;
+		reshade_dll_name = L"ReShade64.dll";
+	}
+
+	// Required SR dll list
+	WCHAR dlls[NUM_DLLS][MAX_PATH] = {
+		// List must be in load order
+		L"opencv_world343.dll",
+		L"glog.dll",
+		L"SimulatedReality.dll",
+		L"DimencoWeaving.dll",
+		L"SimulatedRealityCore.dll",
+		L"SimulatedRealityFaceTrackers.dll",
+		L"SimulatedRealityDisplays.dll",
+		L"SimulatedRealityDirectX.dll",
+	};
+
+	// Get wide string from binary path
+	// Todo Catch error here
+	WCHAR w_sr_binary_path[MAX_PATH];
+	size_t converted_chars;
+	errno_t err = mbstowcs_s(&converted_chars, w_sr_binary_path, sr_binary_path.size() + 1, sr_binary_path.c_str(), _TRUNCATE);
+	if (err == EINVAL)
+	{
+		wprintf(L"Couldn't convert executable path to wstring");
+		return 1;
+	}
+
+	// Don't include SR dlls for 32 bits because we SR doesn't support it
+	if (!use_32_bit) {
+		for (int i = 0; i < num_dlls - 1; i++) {
+			// First copy sr binary path in the dll list, then directory divide and finally the binary name
+			wcscat_s(data.load_path[i], w_sr_binary_path);
+			wcscat_s(data.load_path[i], L"\\");
+			wcscat_s(data.load_path[i], dlls[i]);
+
+			if (GetFileAttributesW(data.load_path[i]) == INVALID_FILE_ATTRIBUTES)
+			{
+				wprintf(L"\nFailed to find dll at \"%s\"!\n", data.load_path[i]);
+				return ERROR_FILE_NOT_FOUND;
+			}
+		}
+	}
+	
+	// Add Reshade dll separately in the last index for 64 bits
+	uint32_t reshade_dll_index = num_dlls - 1;
+	GetCurrentDirectoryW(MAX_PATH, data.load_path[reshade_dll_index]);
+	wcscat_s(data.load_path[reshade_dll_index], L"\\");
+	wcscat_s(data.load_path[reshade_dll_index], reshade_dll_name.c_str());
+	if (GetFileAttributesW(data.load_path[reshade_dll_index]) == INVALID_FILE_ATTRIBUTES)
+	{
+		wprintf(L"\nFailed to find dll at \"%s\"!\n", data.load_path[reshade_dll_index]);
+		return ERROR_FILE_NOT_FOUND;
+	}
+
+	// Only for debugging, log dlls inside the payload
+	for (int i = 0; i < num_dlls; i++)
+	{
+		std::wcout << data.load_path[i] << "\n";
+	}
+
+	// Make sure the DLL has permissions set up for 'ALL_APPLICATION_PACKAGES'
+	for (int i = 0; i < num_dlls; i++) {
+		update_acl_for_uwp(data.load_path[i]);
+	}
+
+	// This happens to work because kernel32.dll is always loaded to the same base address, so the address of 'LoadLibrary' is the same in the target application and the current one
+	data.GetLastError = GetLastError;
+	data.LoadLibraryW = LoadLibraryW;
+	data.SetEnvironmentVariableW = SetEnvironmentVariableW;
+}
 #endif
 
-int InjectIntoApplication(uint32_t pid, std::string sr_binary_path, uint32_t sleep_time)
+int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time)
 {
 	///////////////////
 	// Wait just a little bit for the application to initialize
-	Sleep(sleep_time);
+	// Sleep(sleep_time);
 
 	// Open target application process
 	const scoped_handle remote_process = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, pid);
@@ -71,6 +159,8 @@ int InjectIntoApplication(uint32_t pid, std::string sr_binary_path, uint32_t sle
 		return GetLastError();
 	}
 
+	//Todo You might need a 32 bits exe to inject into a 32 bits app
+	// Prepare two payloads, one for 32 and 64 bit, select the right one here.
 	// Check process architecture
 	BOOL remote_is_wow64 = FALSE;
 	IsWow64Process(remote_process, &remote_is_wow64);
@@ -84,94 +174,21 @@ int InjectIntoApplication(uint32_t pid, std::string sr_binary_path, uint32_t sle
 		return ERROR_IMAGE_MACHINE_TYPE_MISMATCH;
 	}
 
-	/////////////
-	// Prepare payload
-
-	// Always inject Reshade64, we only seupport 64 bit as of now
-	//WCHAR reshade_dll[MAX_PATH];
-	//wcscat_s(reshade_dll, remote_is_wow64 ? L"ReShade32.dll" : L"ReShade64.dll");
-
-	WCHAR dlls[NUM_DLLS][MAX_PATH] = {
-		// List must be in load order
-		L"opencv_world343.dll",
-		L"glog.dll",
-		L"SimulatedReality.dll",
-		L"DimencoWeaving.dll",
-		L"SimulatedRealityCore.dll",
-		L"SimulatedRealityFaceTrackers.dll",
-		L"SimulatedRealityDisplays.dll",
-		L"SimulatedRealityDirectX.dll",
-	};
-
-	loading_data arg;
-	WCHAR w_sr_binary_path[MAX_PATH];
-	size_t converted_chars;
-
-	// Todo Catch error here
-	errno_t err = mbstowcs_s(&converted_chars, w_sr_binary_path, sr_binary_path.size()+1, sr_binary_path.c_str(), _TRUNCATE);
-	if(err == EINVAL)
-	{
-		wprintf(L"Couldn't convert executable path to wstring");
-		return 1;
-	}
-
-	for (int i = 0; i < NUM_DLLS-1; i++) {
-		// First copy sr binary path in the dll list, then directory divide and finally the binary name
-		wcscat_s(arg.load_path[i], w_sr_binary_path);
-		wcscat_s(arg.load_path[i], L"\\");
-		wcscat_s(arg.load_path[i], dlls[i]);
-
-		if (GetFileAttributesW(arg.load_path[i]) == INVALID_FILE_ATTRIBUTES)
-		{
-			wprintf(L"\nFailed to find dll at \"%s\"!\n", arg.load_path[i]);
-			return ERROR_FILE_NOT_FOUND;
-		}
-	}
-
-	// Add Reshade dll separately in the last index
-	uint32_t reshade_dll_index = NUM_DLLS - 1;
-	GetCurrentDirectoryW(MAX_PATH, arg.load_path[reshade_dll_index]);
-	wcscat_s(arg.load_path[reshade_dll_index], L"\\");
-	wcscat_s(arg.load_path[reshade_dll_index], L"ReShade64.dll");
-	if (GetFileAttributesW(arg.load_path[reshade_dll_index]) == INVALID_FILE_ATTRIBUTES)
-	{
-		wprintf(L"\nFailed to find dll at \"%s\"!\n", arg.load_path[reshade_dll_index]);
-		return ERROR_FILE_NOT_FOUND;
-	}
-
-	for (int i = 0; i < NUM_DLLS; i++)
-	{
-		std::wcout << arg.load_path[i] << "\n";
-	}
-
-	// Make sure the DLL has permissions set up for 'ALL_APPLICATION_PACKAGES'
-	for (int i = 0; i < NUM_DLLS; i++) {
-		update_acl_for_uwp(arg.load_path[i]);
-	}
-
-	// This happens to work because kernel32.dll is always loaded to the same base address, so the address of 'LoadLibrary' is the same in the target application and the current one
-	arg.GetLastError = GetLastError;
-	arg.LoadLibraryW = LoadLibraryW;
-
-	arg.SetEnvironmentVariableW = SetEnvironmentVariableW;
-	// Prepare payload
-	///////////////
-
 #if RESHADE_LOADING_THREAD_FUNC
 	const auto loading_thread_func_size = 256; // An estimate of the size of the 'loading_thread_func' function
 #else
 	const auto loading_thread_func_size = 0;
 #endif
-	const auto load_param = VirtualAllocEx(remote_process, nullptr, loading_thread_func_size + sizeof(arg), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	const auto load_param = VirtualAllocEx(remote_process, nullptr, loading_thread_func_size + sizeof(payload), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #if RESHADE_LOADING_THREAD_FUNC
-	const auto loading_thread_func_address = static_cast<LPBYTE>(load_param) + sizeof(arg);
+	const auto loading_thread_func_address = static_cast<LPBYTE>(load_param) + sizeof(payload);
 #else
 	const auto loading_thread_func_address = arg.LoadLibraryW;
 #endif
 
 	// Write thread entry point function and 'LoadLibrary' call argument to target application
 	if (load_param == nullptr
-		|| !WriteProcessMemory(remote_process, load_param, &arg, sizeof(arg), nullptr)
+		|| !WriteProcessMemory(remote_process, load_param, &payload, sizeof(payload), nullptr)
 #if RESHADE_LOADING_THREAD_FUNC
 		|| !WriteProcessMemory(remote_process, loading_thread_func_address, loading_thread_func, loading_thread_func_size, nullptr)
 #endif
