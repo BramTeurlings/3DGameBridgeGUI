@@ -1,9 +1,7 @@
 #include "process_injection.h"
 #include <string>
 #include <iostream>
-
-loading_data x32_injection_data;
-loading_data x64_injection_data;
+#include <chrono>
 
 static void update_acl_for_uwp(LPWSTR path)
 {
@@ -147,6 +145,7 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 
 int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time)
 {
+	auto time_before = std::chrono::high_resolution_clock::now();
 	///////////////////
 	// Wait just a little bit for the application to initialize
 	// Sleep(sleep_time);
@@ -231,6 +230,8 @@ int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sl
 #endif
 	}
 
+	auto time_after = std::chrono::high_resolution_clock::now();
+	std::cout << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - time_before).count();
     return 0;
 }
 

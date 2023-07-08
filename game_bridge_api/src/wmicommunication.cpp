@@ -1,6 +1,7 @@
 #include "wmicommunication.h"
 
 #include <iostream>
+#include <chrono>
 #include <comdef.h>
 #pragma comment(lib, "wbemuuid.lib")
 
@@ -42,30 +43,26 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
 
 HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
+    auto time_before = std::chrono::high_resolution_clock::now();
     for (LONG i = 0; i < lObjectCount; i++)
     {
         Win32ProcessData process_data;
 
-        VARIANT vtProp;
-		HRESULT hres = apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0);
-		if (SUCCEEDED(hres) && vtProp.vt == VT_UNKNOWN && vtProp.punkVal != nullptr)
+        VARIANT vtProp {};
+		if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
 		{
 			IWbemClassObject* pProcessObj = nullptr;
-			hres = vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj));
-			if (SUCCEEDED(hres))
+			if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
 			{
 				// Get process data
-				VARIANT vtProcessId;
-				hres = pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0);
-				if (SUCCEEDED(hres) && vtProcessId.vt == VT_I4)
+                VARIANT vtProcessId {};
+				if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
 				{
 					process_data.pid = vtProcessId.intVal;
 				}
-				VariantClear(&vtProcessId);
 
-				VARIANT vtName;
-				hres = pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0);
-				if (SUCCEEDED(hres) && vtName.vt == VT_BSTR)
+                VARIANT vtName {};
+				if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
 				{
 					size_t char_number = 0;
 					std::wstring wexe_path(vtName.bstrVal);
@@ -79,26 +76,30 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 					{
 						wprintf(L"Process detection: Couldn't convert executable path to wstring");
 					}
-
 				}
-				VariantClear(&vtName);
 
+                // Add message to queue before releasing pointers
+                if (process_data.pid > 0 && !process_data.executable_path.empty())
+                {
+                    message_queue.push(process_data);
+                    semaphore_message_queue.notify();
+                }
+                else
+                {
+					wprintf(L"Couldn't enqueue message from wmi\n");
+				}
+
+				auto time_after = std::chrono::high_resolution_clock::now();
+				std::cout << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << "\n";
+
+				VariantClear(&vtProcessId);
+				VariantClear(&vtName);
 			}
 			// Delete process object
 			pProcessObj->Release();
 
 			// Delete variant
 			VariantClear(&vtProp);
-		}
-
-		if (process_data.pid > 0 && !process_data.executable_path.empty())
-		{
-			message_queue.push(process_data);
-            semaphore_message_queue.notify();
-		}
-		else
-		{
-			wprintf(L"Couldn't enqueue message from wmi\n");
 		}
 
         // Todo check memory leak in this function

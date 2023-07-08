@@ -35,7 +35,6 @@ int main(int argc, char* argv[])
     //    numberLines = true;
     //}
 
-
     std::string game_name = "Journey.exe";
 
     
