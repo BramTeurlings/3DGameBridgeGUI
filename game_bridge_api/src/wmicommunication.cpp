@@ -3,6 +3,8 @@
 #include <iostream>
 #include <chrono>
 #include <comdef.h>
+#include <filesystem>
+#include <sstream>
 #pragma comment(lib, "wbemuuid.lib")
 
 ULONG EventSink::AddRef()
@@ -43,9 +45,12 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
 
 HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
-    auto time_before = std::chrono::high_resolution_clock::now();
+
     for (LONG i = 0; i < lObjectCount; i++)
     {
+		// Performance check
+		auto time_before = std::chrono::high_resolution_clock::now();
+
         Win32ProcessData process_data;
 
         VARIANT vtProp {};
@@ -89,8 +94,11 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 					wprintf(L"Couldn't enqueue message from wmi\n");
 				}
 
+                // Performance check
 				auto time_after = std::chrono::high_resolution_clock::now();
-				std::cout << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << "\n";
+
+                std::stringstream ss; ss << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
+                std::cout << ss.str();
 
 				VariantClear(&vtProcessId);
 				VariantClear(&vtName);
