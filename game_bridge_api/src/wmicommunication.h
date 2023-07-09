@@ -4,6 +4,7 @@
 
 #include <string>
 #include <queue>
+#include "threads.h"
 
 // Todo figure out this code more
 
@@ -15,6 +16,8 @@
 #else
 #define GAME_BRIDGE_API __declspec(dllimport)
 #endif
+
+void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work));
 
 class Semaphore {
 public:
@@ -65,8 +68,7 @@ public:
 
     virtual ULONG STDMETHODCALLTYPE AddRef();
     virtual ULONG STDMETHODCALLTYPE Release();
-    virtual HRESULT
-        STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv);
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv);
 
     virtual HRESULT Indicate(LONG lObjectCount, IWbemClassObject** apObjArray);
 
@@ -89,8 +91,8 @@ public:
     // Todo make this less bad
     EventSink* pSink = NULL;
 
-    long initializeObjects(const char* query);
-    long uninitialize();
+    long InitializeObjects(const char* query);
+    long Deinitialize();
 
     WMICommunication(const char* query);
     ~WMICommunication();

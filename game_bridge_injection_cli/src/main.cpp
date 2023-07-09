@@ -5,6 +5,7 @@
 #include <iostream>
 #include <regex>
 #include "process_injection.h"
+#include "threads.h"
 
 /*
  * Todo:
@@ -34,9 +35,6 @@ int main(int argc, char* argv[])
     //if ((argc == 2) && _stricmp(argv[1], "/n") == 0) {
     //    numberLines = true;
     //}
-
-    std::string game_name = "Journey.exe";
-
     
     std::regex path_regex("^Path");
     std::string path_environment_variable = std::getenv("PATH");

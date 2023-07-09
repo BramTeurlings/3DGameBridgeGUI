@@ -7,6 +7,40 @@
 #include <sstream>
 #pragma comment(lib, "wbemuuid.lib")
 
+#include <sddl.h>
+#include <AclAPI.h>
+#include <TlHelp32.h>
+
+struct scoped_handle
+{
+    HANDLE handle;
+
+    scoped_handle() :
+        handle(INVALID_HANDLE_VALUE) {}
+    scoped_handle(HANDLE handle) :
+        handle(handle) {}
+    scoped_handle(scoped_handle&& other) :
+        handle(other.handle) {
+        other.handle = NULL;
+    }
+    ~scoped_handle() { if (handle != NULL && handle != INVALID_HANDLE_VALUE) CloseHandle(handle); }
+
+    operator HANDLE() const { return handle; }
+
+    HANDLE* operator&() { return &handle; }
+    const HANDLE* operator&() const { return &handle; }
+};
+
+// Thread stuff
+// Todo May need a mutex when setting, leaving it out for now
+PTP_WORK_CALLBACK workcallback = WinThreadPool::DefaultCallback;
+WinThreadPool thread_pool;
+
+void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work))
+{
+    workcallback = work_callback;
+}
+
 ULONG EventSink::AddRef()
 {
     return InterlockedIncrement(&m_lRef);
@@ -31,83 +65,91 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
     else return E_NOINTERFACE;
 }
 
-//HRESULT EventSink::Indicate(long lObjectCount, IWbemClassObject** apObjArray)
-//{
-//    HRESULT hres = S_OK;
-//
-//    for (int i = 0; i < lObjectCount; i++)
-//    {
-//        printf("Event occurred\n");
-//    }
-//
-//    return WBEM_S_NO_ERROR;
-//}
-
 HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
-
     for (LONG i = 0; i < lObjectCount; i++)
     {
-		// Performance check
-		auto time_before = std::chrono::high_resolution_clock::now();
+        DWORD pid = 0;
 
-        Win32ProcessData process_data;
+        // Wait for a process with the target name to spawn
+        std::chrono::steady_clock::time_point a_time_before;
+        while (!pid)
+        {
+            const scoped_handle snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-        VARIANT vtProp {};
-		if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
-		{
-			IWbemClassObject* pProcessObj = nullptr;
-			if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
-			{
-				// Get process data
-                VARIANT vtProcessId {};
-				if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
-				{
-					process_data.pid = vtProcessId.intVal;
-				}
-
-                VARIANT vtName {};
-				if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
-				{
-					size_t char_number = 0;
-					std::wstring wexe_path(vtName.bstrVal);
-					CHAR exe_path[MAX_PATH];
-					errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
-					if (err != EINVAL)
-					{
-						process_data.executable_path = exe_path;
-					}
-					else
-					{
-						wprintf(L"Process detection: Couldn't convert executable path to wstring");
-					}
-				}
-
-                // Add message to queue before releasing pointers
-                if (process_data.pid > 0 && !process_data.executable_path.empty())
+            PROCESSENTRY32W process = { sizeof(process) };
+            for (BOOL next = Process32FirstW(snapshot, &process); next; next = Process32NextW(snapshot, &process))
+            {
+                if (wcscmp(process.szExeFile, L"ULTRAKILL.exe") == 0)
                 {
-                    message_queue.push(process_data);
-                    semaphore_message_queue.notify();
+                    pid = process.th32ProcessID;
+                    break;
                 }
-                else
-                {
-					wprintf(L"Couldn't enqueue message from wmi\n");
-				}
+            }
 
-                // Performance check
-				auto time_after = std::chrono::high_resolution_clock::now();
+            Sleep(1); // Sleep a bit to not overburden the CPU
+        }
 
-                std::stringstream ss; ss << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
-                std::cout << ss.str();
+		//// Performance check
+		//auto time_before = std::chrono::high_resolution_clock::now();
 
-				VariantClear(&vtProcessId);
-				VariantClear(&vtName);
-			}
-			// Delete process object
-			pProcessObj->Release();
+  //      Win32ProcessData process_data;
 
-			// Delete variant
-			VariantClear(&vtProp);
+  //      VARIANT vtProp {};
+		//if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
+		//{
+		//	IWbemClassObject* pProcessObj = nullptr;
+		//	if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
+		//	{
+		//		// Get process data
+  //              VARIANT vtProcessId {};
+		//		if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
+		//		{
+		//			process_data.pid = vtProcessId.intVal;
+		//		}
+
+  //              VARIANT vtName {};
+		//		if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
+		//		{
+		//			size_t char_number = 0;
+		//			std::wstring wexe_path(vtName.bstrVal);
+		//			CHAR exe_path[MAX_PATH];
+		//			errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
+		//			if (err != EINVAL)
+		//			{
+		//				process_data.executable_path = exe_path;
+		//			}
+		//			else
+		//			{
+		//				wprintf(L"Process detection: Couldn't convert executable path to wstring");
+		//			}
+		//		}
+
+  //              // Add message to queue before releasing pointers
+  //              if (process_data.pid > 0 && !process_data.executable_path.empty())
+  //              {
+  //                  message_queue.push(process_data);
+  //                  semaphore_message_queue.notify();
+  //              }
+  //              else
+  //              {
+		//			wprintf(L"Couldn't enqueue message from wmi\n");
+		//		}
+
+  //              // Performance check
+		//		auto time_after = std::chrono::high_resolution_clock::now();
+
+  //              std::stringstream ss; ss << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
+  //              std::cout << ss.str();
+
+		//		VariantClear(&vtProcessId);
+		//		VariantClear(&vtName);
+		//	}
+		//	// Delete process object
+		//	pProcessObj->Release();
+
+		//	// Delete variant
+		//	VariantClear(&vtProp);
 		}
 
         // Todo check memory leak in this function
@@ -148,7 +190,7 @@ HRESULT EventSink::SetStatus(
     return WBEM_S_NO_ERROR;
 }    // end of EventSink.cpp
 
-long WMICommunication::initializeObjects(const char* query)
+long WMICommunication::InitializeObjects(const char* query)
 {
     HRESULT hres;
 
@@ -183,7 +225,7 @@ long WMICommunication::initializeObjects(const char* query)
     {
         std::cout << "Failed to initialize security. Error code = 0x"
             << std::hex << hres << std::endl;
-        uninitialize();
+        Deinitialize();
         return hres;
     }
 
@@ -201,7 +243,7 @@ long WMICommunication::initializeObjects(const char* query)
         std::cout << "Failed to create IWbemLocator object. "
             << "Err code = 0x"
             << std::hex << hres << std::endl;
-        uninitialize();
+        Deinitialize();
         return hres;
     }
 
@@ -225,7 +267,7 @@ long WMICommunication::initializeObjects(const char* query)
     {
         std::cout << "Could not connect. Error code = 0x"
             << std::hex << hres << std::endl;
-        uninitialize();
+        Deinitialize();
         return hres;
     }
 
@@ -249,7 +291,7 @@ long WMICommunication::initializeObjects(const char* query)
     {
         std::cout << "Could not set proxy blanket. Error code = 0x"
             << std::hex << hres << std::endl;
-        uninitialize();
+        Deinitialize();
         return hres;
     }
 
@@ -291,13 +333,13 @@ long WMICommunication::initializeObjects(const char* query)
     {
         printf("ExecNotificationQueryAsync failed "
             "with = 0x%X\n", hres);
-        uninitialize();
+        Deinitialize();
     }
 
     return hres;
 }
 
-long WMICommunication::uninitialize()
+long WMICommunication::Deinitialize()
 {
     HRESULT hres;
     hres = pSvc->CancelAsyncCall(pStubSink);
@@ -335,5 +377,5 @@ WMICommunication::WMICommunication(const char* query)
 
 WMICommunication::~WMICommunication()
 {
-    uninitialize();
+    Deinitialize();
 }

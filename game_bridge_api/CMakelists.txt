@@ -10,6 +10,8 @@ src/gamebridgeapi.h
 src/gamebridgeapi.cpp
 src/wmicommunication.h
 src/wmicommunication.cpp
+src/threads.h
+src/threads.cpp
 )
 
 target_compile_definitions(3DGameBridgeApi PUBLIC GAME_BRIDGE_API_EXPORTS)

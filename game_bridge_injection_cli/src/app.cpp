@@ -12,7 +12,7 @@
 namespace fs = std::filesystem;
 
 bool RunExternalProgram(const std::string externalProgram);
-bool EndProgram();
+bool ExitExternalProgram();
 
 namespace game_bridge {
 
@@ -33,7 +33,7 @@ namespace game_bridge {
 
         // Init WMI here for now
         WMICommunication process_detection("");
-        process_detection.initializeObjects("");
+        process_detection.InitializeObjects("");
 
         std::vector<std::string> executable_names;
         for (GameConfiguration config : supported_games) {
@@ -49,7 +49,6 @@ namespace game_bridge {
         LOG << "Start measurement";
         RunExternalProgram("D:/SteamLibrary/steamapps/common/ULTRAKILL Demo/ULTRAKILL.exe");
         auto a_time_before = std::chrono::high_resolution_clock::now();
-
 
         // Keep the app running
         while (true) {
@@ -92,8 +91,9 @@ namespace game_bridge {
 				break;
 			}
         }
-        
-		bool EndProgram();
+
+		Sleep(2000);
+		ExitExternalProgram();
     }
 
 
@@ -131,10 +131,15 @@ bool RunExternalProgram(const std::string externalProgram)
     return success;
 }
 
-bool EndProgram()
+bool ExitExternalProgram()
 {
-	bool success = TerminateProcess(processInfo.hProcess, NULL);
-	WaitForSingleObject(processInfo.hProcess, 5000);
+	bool success = false;
+	while(!TerminateProcess(processInfo.hProcess, NULL))
+	{
+		LOG << "Didn't close handle, retrying " << GetLastError();
+		Sleep(100);
+	}
+	WaitForSingleObject(processInfo.hThread, 5000);
 
 	if (!CloseHandle(processInfo.hProcess)) {
 		LOG << "Failed closing process handle, error: " << GetLastError();
