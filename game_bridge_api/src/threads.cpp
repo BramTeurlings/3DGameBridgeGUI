@@ -17,7 +17,7 @@ void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parame
     // Do something when the work callback is invoked.
     //
     {
-        std::cout << "MyWorkCallback: Task performed.\n";
+        std::cout << "MyWorkCallback: Task performed on thread " << GetCurrentThreadId() << "\n";
     }
 }
 
@@ -101,9 +101,6 @@ bool WinThreadPool::StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instanc
     work = CreateThreadpoolWork(work_callback, parameter, &CallBackEnviron);
     if (NULL == work) {
         std::cout << "CreateThreadpoolWork failed. LastError: %u" << GetLastError();
-    }
-    else  
-    {
         return false;
     }
 

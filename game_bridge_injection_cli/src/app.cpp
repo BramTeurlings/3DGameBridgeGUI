@@ -32,6 +32,7 @@ namespace game_bridge {
         game_bridge::subscribe_to_pocess_events();
 
         // Init WMI here for now
+		//SetIndicateEventCallback();
         WMICommunication process_detection("");
         process_detection.InitializeObjects("");
 
