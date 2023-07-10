@@ -1,11 +1,32 @@
 #include "threads.h"
-#include <windows.h>
+#include <Windows.h>
 #include <tchar.h>
 #include <iostream>
+
 
 //
 // This is the thread pool work callback function.
 //
+#include <TlHelp32.h>
+struct scoped_handle
+{
+    HANDLE handle;
+
+    scoped_handle() :
+        handle(INVALID_HANDLE_VALUE) {}
+    scoped_handle(HANDLE handle) :
+        handle(handle) {}
+    scoped_handle(scoped_handle&& other) :
+        handle(other.handle) {
+        other.handle = NULL;
+    }
+    ~scoped_handle() { if (handle != NULL && handle != INVALID_HANDLE_VALUE) CloseHandle(handle); }
+
+    operator HANDLE() const { return handle; }
+
+    HANDLE* operator&() { return &handle; }
+    const HANDLE* operator&() const { return &handle; }
+};
 void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
     // Instance, Parameter, and Work not used in this example.
@@ -16,8 +37,27 @@ void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parame
     //
     // Do something when the work callback is invoked.
     //
+    DWORD pid = 0;
+
+    const scoped_handle snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    PROCESSENTRY32W process = { sizeof(process) };
+    for (BOOL next = Process32FirstW(snapshot, &process); next; next = Process32NextW(snapshot, &process))
     {
-        std::cout << "MyWorkCallback: Task performed on thread " << GetCurrentThreadId() << "\n";
+        if (wcscmp(process.szExeFile, L"ULTRAKILL.exe") == 0)
+        {
+            pid = process.th32ProcessID;
+        }
+    }
+
+    if(pid)
+    {
+        perf_time.a_after = std::chrono::high_resolution_clock::now();
+        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.a_after - perf_time.a_before).count() << std::endl;
+    }
+    else
+    {
+        std::cout << "NOT FOUND\n";
     }
 }
 
@@ -33,7 +73,7 @@ WinThreadPool::WinThreadPool()
         std::cout << "CreateThreadpool failed. LastError: " << GetLastError();
         throw std::runtime_error("CreateThreadpool failed. LastError: " + GetLastError());
     }
-    
+
     //
     // The thread pool is made persistent simply by setting
     // both the minimum and maximum threads to 1.
@@ -65,35 +105,35 @@ WinThreadPool::WinThreadPool()
     // Objects created with the same callback environment
     // as the cleanup group become members of the cleanup group.
     //
-    SetThreadpoolCallbackCleanupGroup(&CallBackEnviron, cleanupgroup,NULL);
+    SetThreadpoolCallbackCleanupGroup(&CallBackEnviron, cleanupgroup, NULL);
 }
 
 WinThreadPool::~WinThreadPool()
 {
-	//
-	// Wait for all callbacks to finish.
-	// CloseThreadpoolCleanupGroupMembers also releases objects
-	// that are members of the cleanup group, so it is not necessary 
-	// to call close functions on individual objects 
-	// after calling CloseThreadpoolCleanupGroupMembers.
-	//
-	CloseThreadpoolCleanupGroupMembers(cleanupgroup, FALSE, NULL);
+    //
+    // Wait for all callbacks to finish.
+    // CloseThreadpoolCleanupGroupMembers also releases objects
+    // that are members of the cleanup group, so it is not necessary 
+    // to call close functions on individual objects 
+    // after calling CloseThreadpoolCleanupGroupMembers.
+    //
+    CloseThreadpoolCleanupGroupMembers(cleanupgroup, FALSE, NULL);
 
-	// Clean up any individual pieces manually
-	// Notice the fall-through structure of the switch.
-	// Clean up in reverse order.
+    // Clean up any individual pieces manually
+    // Notice the fall-through structure of the switch.
+    // Clean up in reverse order.
 
-	// Clean up the cleanup group members.
-	CloseThreadpoolCleanupGroupMembers(cleanupgroup, FALSE, NULL);
+    // Clean up the cleanup group members.
+    CloseThreadpoolCleanupGroupMembers(cleanupgroup, FALSE, NULL);
 
-	// Clean up the cleanup group.
-	CloseThreadpoolCleanupGroup(cleanupgroup);
+    // Clean up the cleanup group.
+    CloseThreadpoolCleanupGroup(cleanupgroup);
 
-	// Clean up the pool.
-	CloseThreadpool(pool);
+    // Clean up the pool.
+    CloseThreadpool(pool);
 }
 
-bool WinThreadPool::StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work),const PVOID parameter)
+bool WinThreadPool::StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work), const PVOID parameter)
 {
     //
    // Create work with the callback environment.

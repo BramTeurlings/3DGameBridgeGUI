@@ -1,5 +1,21 @@
 #pragma once
 #include "Windows.h"
+#include <chrono>
+
+
+struct TimeMeasurements
+{
+    atomic( std::chrono::high_resolution_clock::time_point a_before;
+    std::chrono::high_resolution_clock::time_point b_before;
+    std::chrono::high_resolution_clock::time_point c_before;
+    std::chrono::high_resolution_clock::time_point d_before;
+
+    std::chrono::high_resolution_clock::time_point a_after;
+    std::chrono::high_resolution_clock::time_point b_after;
+    std::chrono::high_resolution_clock::time_point c_after;
+    std::chrono::high_resolution_clock::time_point d_after;
+};
+static TimeMeasurements perf_time;
 
 class WinThreadPool
 {

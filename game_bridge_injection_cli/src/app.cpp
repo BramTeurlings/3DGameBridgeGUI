@@ -8,6 +8,7 @@
 #include "process_injection.h"
 #include "gamebridgeapi.h"
 #include "logger.h"
+#include "threads.h"
 
 namespace fs = std::filesystem;
 
@@ -48,21 +49,20 @@ namespace game_bridge {
         LOG << "Waiting 5 seconds for initialize process events to pass...";
         Sleep(5000);
         LOG << "Start measurement";
-        RunExternalProgram("D:/SteamLibrary/steamapps/common/ULTRAKILL Demo/ULTRAKILL.exe");
-        auto a_time_before = std::chrono::high_resolution_clock::now();
-
+        RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
+        perf_time.a_before = std::chrono::high_resolution_clock::now();
         // Keep the app running
         while (true) {
             // Wait for a process tobe added to the queue
             process_detection.pSink->semaphore_message_queue.wait();
 
-            auto c_time_after = std::chrono::high_resolution_clock::now();
+            perf_time.c_after = std::chrono::high_resolution_clock::now();
 
-            auto d_time_before = std::chrono::high_resolution_clock::now();
+           perf_time.d_before = std::chrono::high_resolution_clock::now();
             Win32ProcessData process_data = process_detection.pSink->message_queue.front();
             process_detection.pSink->message_queue.pop();
             // LOG << "pid: " << process_data.pid << " path: " << process_data.executable_path;
-            auto d_time_after = std::chrono::high_resolution_clock::now();
+            perf_time.d_after = std::chrono::high_resolution_clock::now();
 
             fs::path detected_exe(process_data.executable_path);
             std::string filename = detected_exe.filename().string();
@@ -73,17 +73,17 @@ namespace game_bridge {
 
 
 					// Performance check
-					auto b_time_before = std::chrono::high_resolution_clock::now();
+					perf_time.b_before = std::chrono::high_resolution_clock::now();
 					InjectIntoApplication(process_data.pid, payload_64_bit);
-					auto b_time_after = std::chrono::high_resolution_clock::now();
+					perf_time.b_after = std::chrono::high_resolution_clock::now();
 
-					auto a_time_after = std::chrono::high_resolution_clock::now();
+					
 
 					LOG << "Injected into supported game";
-					LOG << "Process detection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(c_time_after - a_time_before).count();
-					LOG << "Queue pop time: " << std::chrono::duration_cast<std::chrono::milliseconds>(d_time_after - d_time_before).count();
-					LOG << "Injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(b_time_after - b_time_before).count();
-					LOG << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(a_time_after - a_time_before).count();
+					LOG << "Process detection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.c_after - perf_time.a_before).count();
+					LOG << "Queue pop time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.d_after - perf_time.d_before).count();
+					LOG << "Injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.b_after - perf_time.b_before).count();
+					LOG << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.a_after - perf_time.a_before).count();
 					break_true = true;
 				}
 				});
