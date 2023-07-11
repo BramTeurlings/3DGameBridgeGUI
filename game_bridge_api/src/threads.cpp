@@ -2,7 +2,9 @@
 #include <Windows.h>
 #include <tchar.h>
 #include <iostream>
+#include <mutex>
 
+std::mutex time_write;
 
 //
 // This is the thread pool work callback function.
@@ -27,6 +29,7 @@ struct scoped_handle
     HANDLE* operator&() { return &handle; }
     const HANDLE* operator&() const { return &handle; }
 };
+
 void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
     // Instance, Parameter, and Work not used in this example.
@@ -52,8 +55,9 @@ void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parame
 
     if(pid)
     {
-        perf_time.a_after = std::chrono::high_resolution_clock::now();
-        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.a_after - perf_time.a_before).count() << std::endl;
+        std::lock_guard<std::mutex> guard(time_write);
+        WinThreadPool::perf_time->a_after = std::chrono::high_resolution_clock::now();
+        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->a_after - WinThreadPool::perf_time->a_before).count() << std::endl;
     }
     else
     {

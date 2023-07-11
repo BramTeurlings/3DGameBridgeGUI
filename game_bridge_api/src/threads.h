@@ -1,11 +1,11 @@
 #pragma once
 #include "Windows.h"
 #include <chrono>
-
+#include <thread>
 
 struct TimeMeasurements
 {
-    atomic( std::chrono::high_resolution_clock::time_point a_before;
+    std::chrono::high_resolution_clock::time_point a_before;
     std::chrono::high_resolution_clock::time_point b_before;
     std::chrono::high_resolution_clock::time_point c_before;
     std::chrono::high_resolution_clock::time_point d_before;
@@ -15,7 +15,6 @@ struct TimeMeasurements
     std::chrono::high_resolution_clock::time_point c_after;
     std::chrono::high_resolution_clock::time_point d_after;
 };
-static TimeMeasurements perf_time;
 
 class WinThreadPool
 {
@@ -32,4 +31,5 @@ public:
 
 	bool StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work), PVOID parameter);
     static void DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
+	static inline TimeMeasurements* perf_time = nullptr;
 };

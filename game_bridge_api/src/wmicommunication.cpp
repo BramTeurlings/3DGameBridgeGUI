@@ -69,8 +69,6 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
     for (LONG i = 0; i < lObjectCount; i++)
     {
-
-
 		// Performance check
 		auto time_before = std::chrono::high_resolution_clock::now();
         Win32ProcessData process_data;

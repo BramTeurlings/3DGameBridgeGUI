@@ -9,6 +9,7 @@
 #include "gamebridgeapi.h"
 #include "logger.h"
 #include "threads.h"
+#include <chrono>
 
 namespace fs = std::filesystem;
 
@@ -46,23 +47,24 @@ namespace game_bridge {
         CreatePayload(sr_binary_path, payload_64_bit);
         
 		///////////////////////// Performance measurements
-        LOG << "Waiting 5 seconds for initialize process events to pass...";
-        Sleep(5000);
-        LOG << "Start measurement";
-        RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
-        perf_time.a_before = std::chrono::high_resolution_clock::now();
-        // Keep the app running
-        while (true) {
-            // Wait for a process tobe added to the queue
-            process_detection.pSink->semaphore_message_queue.wait();
+		LOG << "Waiting 5 seconds for initialize process events to pass...";
+		Sleep(5000);
+		LOG << "Start measurement";
+		WinThreadPool::perf_time = new TimeMeasurements();
+		WinThreadPool::perf_time->a_before = std::chrono::high_resolution_clock::now();
+		RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
+		// Keep the app running
+		while (true) {
+			// Wait for a process tobe added to the queue
+			process_detection.pSink->semaphore_message_queue.wait();
 
-            perf_time.c_after = std::chrono::high_resolution_clock::now();
+			WinThreadPool::perf_time->c_after = std::chrono::high_resolution_clock::now();
 
-           perf_time.d_before = std::chrono::high_resolution_clock::now();
-            Win32ProcessData process_data = process_detection.pSink->message_queue.front();
-            process_detection.pSink->message_queue.pop();
-            // LOG << "pid: " << process_data.pid << " path: " << process_data.executable_path;
-            perf_time.d_after = std::chrono::high_resolution_clock::now();
+			WinThreadPool::perf_time->d_before = std::chrono::high_resolution_clock::now();
+			Win32ProcessData process_data = process_detection.pSink->message_queue.front();
+			process_detection.pSink->message_queue.pop();
+			// LOG << "pid: " << process_data.pid << " path: " << process_data.executable_path;
+			WinThreadPool::perf_time->d_after = std::chrono::high_resolution_clock::now();
 
             fs::path detected_exe(process_data.executable_path);
             std::string filename = detected_exe.filename().string();
@@ -73,17 +75,17 @@ namespace game_bridge {
 
 
 					// Performance check
-					perf_time.b_before = std::chrono::high_resolution_clock::now();
+					WinThreadPool::perf_time->b_before = std::chrono::high_resolution_clock::now();
 					InjectIntoApplication(process_data.pid, payload_64_bit);
-					perf_time.b_after = std::chrono::high_resolution_clock::now();
+					WinThreadPool::perf_time->b_after = std::chrono::high_resolution_clock::now();
 
 					
 
 					LOG << "Injected into supported game";
-					LOG << "Process detection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.c_after - perf_time.a_before).count();
-					LOG << "Queue pop time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.d_after - perf_time.d_before).count();
-					LOG << "Injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.b_after - perf_time.b_before).count();
-					LOG << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time.a_after - perf_time.a_before).count();
+					LOG << "Process detection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->c_after - WinThreadPool::perf_time->a_before).count();
+					LOG << "Queue pop time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->d_after - WinThreadPool::perf_time->d_before).count();
+					LOG << "Injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->b_after - WinThreadPool::perf_time->b_before).count();
+					LOG << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->a_after - WinThreadPool::perf_time->a_before).count();
 					break_true = true;
 				}
 				});
