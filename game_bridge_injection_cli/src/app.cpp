@@ -51,7 +51,7 @@ namespace game_bridge {
 		Sleep(5000);
 		LOG << "Start measurement";
 		process_detection.GetTime().a_before = std::chrono::high_resolution_clock::now();
-		//RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
+		RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
 
 		// Keep the app running
 		while (true) {

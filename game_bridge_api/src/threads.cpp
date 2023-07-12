@@ -56,8 +56,10 @@ void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parame
     if(pid)
     {
         std::lock_guard<std::mutex> guard(time_write);
-        //WinThreadPool::perf_time->a_after = std::chrono::high_resolution_clock::now();
-        //std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->a_after - WinThreadPool::perf_time->a_before).count() << std::endl;
+        TimeMeasurements* perf_time = reinterpret_cast<TimeMeasurements*>(parameter);
+
+        perf_time->a_after = std::chrono::high_resolution_clock::now();
+        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(perf_time->a_after - perf_time->a_before).count() << std::endl;
     }
     else
     {
