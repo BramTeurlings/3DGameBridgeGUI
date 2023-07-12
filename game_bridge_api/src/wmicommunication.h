@@ -94,8 +94,8 @@ public:
     long InitializeObjects(const char* query);
     long Deinitialize();
 
-    void SetTime(const TimeMeasurements& val);
-    TimeMeasurements& GetTime();
+    static void SetDetectionData(const ProcessDetectionData& val);
+    static ProcessDetectionData& GetDetectionData();
 
     WMICommunication(const char* query);
     ~WMICommunication();

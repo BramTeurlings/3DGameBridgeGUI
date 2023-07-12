@@ -2,19 +2,15 @@
 #include "Windows.h"
 #include <chrono>
 #include <thread>
+#include <vector>
+#include <string>
 
-struct TimeMeasurements
+struct ProcessDetectionData
 {
-    std::chrono::high_resolution_clock::time_point a_before;
-    std::chrono::high_resolution_clock::time_point b_before;
-    std::chrono::high_resolution_clock::time_point c_before;
-    std::chrono::high_resolution_clock::time_point d_before;
-
-    std::chrono::high_resolution_clock::time_point a_after;
-    std::chrono::high_resolution_clock::time_point b_after;
-    std::chrono::high_resolution_clock::time_point c_after;
-    std::chrono::high_resolution_clock::time_point d_after;
+    std::vector <std::string> supported_titles;
+    std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
 };
+
 
 class WinThreadPool
 {
