@@ -56,8 +56,8 @@ void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parame
     if(pid)
     {
         std::lock_guard<std::mutex> guard(time_write);
-        WinThreadPool::perf_time->a_after = std::chrono::high_resolution_clock::now();
-        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->a_after - WinThreadPool::perf_time->a_before).count() << std::endl;
+        //WinThreadPool::perf_time->a_after = std::chrono::high_resolution_clock::now();
+        //std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(WinThreadPool::perf_time->a_after - WinThreadPool::perf_time->a_before).count() << std::endl;
     }
     else
     {
@@ -147,6 +147,7 @@ bool WinThreadPool::StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instanc
         std::cout << "CreateThreadpoolWork failed. LastError: %u" << GetLastError();
         return false;
     }
+
 
     //
     // Submit the work to the pool. Because this was a pre-allocated

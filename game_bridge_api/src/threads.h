@@ -31,5 +31,4 @@ public:
 
 	bool StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work), PVOID parameter);
     static void DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
-	static inline TimeMeasurements* perf_time = nullptr;
 };

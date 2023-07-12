@@ -93,6 +93,8 @@ public:
 
     long InitializeObjects(const char* query);
     long Deinitialize();
+    void SetTime(const TimeMeasurements& val);
+    TimeMeasurements& GetTime();
 
     WMICommunication(const char* query);
     ~WMICommunication();

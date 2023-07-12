@@ -11,6 +11,8 @@
 #include <AclAPI.h>
 #include <TlHelp32.h>
 
+static inline TimeMeasurements perf_time;
+
 struct scoped_handle
 {
     HANDLE handle;
@@ -77,6 +79,9 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 		if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
 		{
             thread_pool.StartWork(workcallback, NULL);
+
+            std::stringstream ss; ss << "TEST VALUE: " << perf_time.a_before.time_since_epoch().count() << "\n";
+            std::cout << ss.str();
 
 			//IWbemClassObject* pProcessObj = nullptr;
 			//if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
@@ -356,4 +361,13 @@ WMICommunication::WMICommunication(const char* query)
 WMICommunication::~WMICommunication()
 {
     Deinitialize();
+}
+
+void WMICommunication::SetTest(const TimeMeasurements& val)
+{
+    perf_time = val;
+}
+
+TimeMeasurements& WMICommunication::GetTime() {
+
 }
