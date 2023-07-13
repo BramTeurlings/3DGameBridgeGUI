@@ -7,14 +7,13 @@
 #include <sstream>
 #pragma comment(lib, "wbemuuid.lib")
 
-#include "process_injection.h"
-
-
 static inline ProcessDetectionData detection_data;
 // Thread stuff
 // Todo May need a mutex when setting the callback, leaving it out for now
-PTP_WORK_CALLBACK workcallback = WmiSearchCallback;
+PTP_WORK_CALLBACK workcallback = ProcessEnumerationCallback;
 WinThreadPool thread_pool;
+
+loading_data payload64;
 
 struct ThreadSpecificData
 {
@@ -28,6 +27,8 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
     ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
     VARIANT vtProp = data->vtProp;
     IWbemClassObject* pProcessObj = nullptr;
+
+    auto c_before = std::chrono::high_resolution_clock::now();
     if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
     {
         // Get process data
@@ -42,7 +43,7 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
         if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
         {
             size_t char_number = 0;
-            std::wstring wexe_path(vtName.bstrVal);
+           std::wstring wexe_path(vtName.bstrVal);
             CHAR exe_path[MAX_PATH];
             errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
             if (err != EINVAL)
@@ -56,12 +57,24 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
         }
 
         // Do injection here
+        std::string exe_name = std::filesystem::path(process_data.executable_path).filename().string();
+        std::for_each(data->dData->supported_titles.begin(), data->dData->supported_titles.end(), [&](std::string a) {
+            if (exe_name.compare(a) == 0) {
+                // Performance check
+                auto b_before = std::chrono::high_resolution_clock::now();
+                InjectIntoApplication(process_data.pid, payload64);
 
-        // Performance check
-        auto time_after = std::chrono::high_resolution_clock::now();
+                // Performance check
+                auto time_after = std::chrono::high_resolution_clock::now();
 
-        std::stringstream ss; ss << "ms Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
-        std::cout << ss.str();
+                std::stringstream ss; ss << "injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - b_before).count() << " --- " << exe_name << std::endl;
+                ss << "wmi process detect time: " << std::chrono::duration_cast<std::chrono::milliseconds>(c_before - data->dData->pr_start_tm).count() << std::endl;
+                ss << "exe search time micro: " << std::chrono::duration_cast<std::chrono::microseconds>(b_before - c_before).count() << std::endl;
+                ss << "ms Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << std::endl;
+                std::cout << ss.str();
+            }
+            });
+
 
         VariantClear(&vtProcessId);
         VariantClear(&vtName);
@@ -69,6 +82,7 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
     // Delete process object
     pProcessObj->Release();
     data->apObjectl->Release(); // Release reference set in the Indicate callback function
+    delete data;
 
     // Delete variant
     VariantClear(&vtProp);
@@ -85,7 +99,7 @@ void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter,
     // Do something when the work callback is invoked.
     //
     DWORD pid = 0;
-
+    auto c_before = std::chrono::high_resolution_clock::now();
     const scoped_handle snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     PROCESSENTRY32W process = { sizeof(process) };
@@ -99,11 +113,18 @@ void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter,
 
     if (pid)
     {
-        ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
-        VARIANT vtProp = data->vtProp;
+        auto b_before = std::chrono::high_resolution_clock::now();
+        InjectIntoApplication(pid, payload64);
 
-        auto detect_time = std::chrono::high_resolution_clock::now();
-        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(detect_time - data->dData->pr_start_tm).count() << std::endl;
+        auto time_after = std::chrono::high_resolution_clock::now();
+
+
+        ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
+
+        std::cout << "exe search time: " << std::chrono::duration_cast<std::chrono::milliseconds>(b_before - c_before).count() << std::endl;
+        std::cout << "injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - b_before).count() << std::endl;
+        std::cout << "wmi process detect time: " << std::chrono::duration_cast<std::chrono::milliseconds>(c_before - data->dData->pr_start_tm).count() << std::endl;
+        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << std::endl;
     }
     else
     {
@@ -198,6 +219,11 @@ HRESULT EventSink::SetStatus(
 
     return WBEM_S_NO_ERROR;
 }    // end of EventSink.cpp
+
+void WMICommunication::initialize_payload(const std::string& sr_binary_path)
+{
+    CreatePayload(sr_binary_path, payload64);
+}
 
 long WMICommunication::InitializeObjects(const char* query)
 {

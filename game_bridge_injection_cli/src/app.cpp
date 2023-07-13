@@ -33,18 +33,20 @@ namespace game_bridge {
         game_bridge::init_api();
         game_bridge::subscribe_to_pocess_events();
 
+        WMICommunication process_detection("");
+
+		// Wack way of doing this, but it was quick
+		process_detection.initialize_payload(sr_binary_path);
+
+		std::vector<std::string> executable_names;
+		for (GameConfiguration config : supported_games) {
+			executable_names.push_back(config.exe_name);
+		}
+		process_detection.GetDetectionData().supported_titles = executable_names;
+
         // Init WMI here for now
 		//SetIndicateEventCallback();
-        WMICommunication process_detection("");
         process_detection.InitializeObjects("");
-
-        std::vector<std::string> executable_names;
-        for (GameConfiguration config : supported_games) {
-            executable_names.push_back(config.exe_name);
-        }
-
-        loading_data payload_64_bit;
-        CreatePayload(sr_binary_path, payload_64_bit);
         
 		///////////////////////// Performance measurements
 		LOG << "Waiting 5 seconds for initialize process events to pass...";
@@ -76,7 +78,7 @@ namespace game_bridge {
 
 					// Performance check
 					//process_detection.GetTime().b_before = std::chrono::high_resolution_clock::now();
-					InjectIntoApplication(process_data.pid, payload_64_bit);
+					//InjectIntoApplication(process_data.pid, payload64);
 					//process_detection.GetTime().b_after = std::chrono::high_resolution_clock::now();
 
 					

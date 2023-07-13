@@ -21,7 +21,7 @@
 #define GAME_BRIDGE_API __declspec(dllimport)
 #endif
 
-GAME_BRIDGE_API struct loading_data
+struct loading_data
 {
 	WCHAR load_path[NUM_DLLS][MAX_PATH] = { L"" };
 	decltype(&GetLastError) GetLastError = nullptr;

@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include "process_injection.h"
 
 #ifdef GAME_BRIDGE_API_EXPORTS
 #define GAME_BRIDGE_API __declspec(dllexport)
@@ -54,7 +55,6 @@ struct ProcessDetectionData
 {
     std::vector <std::string> supported_titles;
     std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
-    
 };
 
 struct Win32ProcessData
@@ -101,6 +101,7 @@ public:
     // Todo make this less bad
     EventSink* pSink = NULL;
 
+    void initialize_payload(const std::string& sr_binary_path);
     long InitializeObjects(const char* query);
     long Deinitialize();
 
