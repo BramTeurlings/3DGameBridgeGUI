@@ -3,8 +3,6 @@ project (InjectionCLI VERSION 0.1)
 
 add_executable(InjectionCLI
 src/main.cpp
-src/process_injection.h
-src/process_injection.cpp
 # src/process_detection.h
 # src/process_detection.cpp
 src/configuration.h

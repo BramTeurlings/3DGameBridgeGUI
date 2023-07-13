@@ -5,6 +5,7 @@
 #include <string>
 #include <queue>
 #include "threads.h"
+#include <TlHelp32.h>
 
 // Todo figure out this code more
 
@@ -19,6 +20,7 @@
 
 void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work));
 void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
+void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
 
 class Semaphore {
 public:
@@ -46,6 +48,13 @@ private:
     std::mutex mtx;
     std::condition_variable cv;
     int count;
+};
+
+struct ProcessDetectionData
+{
+    std::vector <std::string> supported_titles;
+    std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
+    
 };
 
 struct Win32ProcessData

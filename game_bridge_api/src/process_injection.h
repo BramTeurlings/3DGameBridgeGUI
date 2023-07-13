@@ -8,19 +8,20 @@
 
 #include <stdio.h>
 #include <Windows.h>
-#include <sddl.h>
-#include <AclAPI.h>
-#include <TlHelp32.h>
 
 #include <string>
 
-#include "logger.h"
-
 #define RESHADE_LOADING_THREAD_FUNC 1
 #define NUM_DLLS 9
-#define SR_REGISTRY_PATH 
+#define SR_REGISTRY_PATH
 
-struct loading_data
+#ifdef GAME_BRIDGE_API_EXPORTS
+#define GAME_BRIDGE_API __declspec(dllexport)
+#else
+#define GAME_BRIDGE_API __declspec(dllimport)
+#endif
+
+GAME_BRIDGE_API struct loading_data
 {
 	WCHAR load_path[NUM_DLLS][MAX_PATH] = { L"" };
 	decltype(&GetLastError) GetLastError = nullptr;
@@ -67,10 +68,10 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 }
 #endif
 
-int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit = false);
-int GetPID(std::string process_name);
+GAME_BRIDGE_API int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit = false);
+GAME_BRIDGE_API int GetPID(std::string process_name);
 
-inline int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time = 50)
+GAME_BRIDGE_API inline int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time = 50)
 {
 	///////////////////
 	// Wait just a little bit for the application to initialize

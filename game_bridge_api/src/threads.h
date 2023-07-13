@@ -6,13 +6,6 @@
 #include <string>
 #include <Wbemidl.h>
 
-struct ProcessDetectionData
-{
-    std::vector <std::string> supported_titles;
-    std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
-};
-
-
 class WinThreadPool
 {
     BOOL bRet = FALSE;

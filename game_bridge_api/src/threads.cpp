@@ -6,67 +6,6 @@
 
 std::mutex time_write;
 
-//
-// This is the thread pool work callback function.
-//
-#include <TlHelp32.h>
-struct scoped_handle
-{
-    HANDLE handle;
-
-    scoped_handle() :
-        handle(INVALID_HANDLE_VALUE) {}
-    scoped_handle(HANDLE handle) :
-        handle(handle) {}
-    scoped_handle(scoped_handle&& other) :
-        handle(other.handle) {
-        other.handle = NULL;
-    }
-    ~scoped_handle() { if (handle != NULL && handle != INVALID_HANDLE_VALUE) CloseHandle(handle); }
-
-    operator HANDLE() const { return handle; }
-
-    HANDLE* operator&() { return &handle; }
-    const HANDLE* operator&() const { return &handle; }
-};
-
-void WinThreadPool::DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
-{
-    // Instance, Parameter, and Work not used in this example.
-    UNREFERENCED_PARAMETER(instance);
-    UNREFERENCED_PARAMETER(parameter);
-    UNREFERENCED_PARAMETER(work);
-
-    //
-    // Do something when the work callback is invoked.
-    //
-    DWORD pid = 0;
-
-    const scoped_handle snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    PROCESSENTRY32W process = { sizeof(process) };
-    for (BOOL next = Process32FirstW(snapshot, &process); next; next = Process32NextW(snapshot, &process))
-    {
-        if (wcscmp(process.szExeFile, L"ULTRAKILL.exe") == 0)
-        {
-            pid = process.th32ProcessID;
-        }
-    }
-
-    if (pid)
-    {
-        std::lock_guard<std::mutex> guard(time_write);
-        ProcessDetectionData* detect = reinterpret_cast<ProcessDetectionData*>(parameter);
-
-        auto detect_time = std::chrono::high_resolution_clock::now();
-        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(detect_time - detect->pr_start_tm).count() << std::endl;
-    }
-    else
-    {
-        std::cout << "NOT FOUND\n";
-    }
-}
-
 WinThreadPool::WinThreadPool()
 {
     InitializeThreadpoolEnvironment(&CallBackEnviron);

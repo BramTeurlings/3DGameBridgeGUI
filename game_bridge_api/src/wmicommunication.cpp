@@ -7,9 +7,14 @@
 #include <sstream>
 #pragma comment(lib, "wbemuuid.lib")
 
-#include <sddl.h>
-#include <AclAPI.h>
-#include <TlHelp32.h>
+#include "process_injection.h"
+
+
+static inline ProcessDetectionData detection_data;
+// Thread stuff
+// Todo May need a mutex when setting the callback, leaving it out for now
+PTP_WORK_CALLBACK workcallback = WmiSearchCallback;
+WinThreadPool thread_pool;
 
 struct ThreadSpecificData
 {
@@ -17,12 +22,6 @@ struct ThreadSpecificData
     VARIANT vtProp;
     IWbemClassObject* apObjectl;
 };
-
-static inline ProcessDetectionData detection_data;
-// Thread stuff
-// Todo May need a mutex when setting the callback, leaving it out for now
-PTP_WORK_CALLBACK workcallback = WmiSearchCallback;
-WinThreadPool thread_pool;
 
 void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
@@ -77,30 +76,40 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
 
 void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
-	
-}
+    // Instance, Parameter, and Work not used in this example.
+    //UNREFERENCED_PARAMETER(instance);
+    //UNREFERENCED_PARAMETER(parameter);
+    UNREFERENCED_PARAMETER(work);
 
-struct scoped_handle
-{
-    HANDLE handle;
+    //
+    // Do something when the work callback is invoked.
+    //
+    DWORD pid = 0;
 
-    scoped_handle() :
-        handle(INVALID_HANDLE_VALUE) {}
-    scoped_handle(HANDLE handle) :
-        handle(handle) {}
-    scoped_handle(scoped_handle&& other) :
-        handle(other.handle) {
-        other.handle = NULL;
+    const scoped_handle snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    PROCESSENTRY32W process = { sizeof(process) };
+    for (BOOL next = Process32FirstW(snapshot, &process); next; next = Process32NextW(snapshot, &process))
+    {
+        if (wcscmp(process.szExeFile, L"ULTRAKILL.exe") == 0)
+        {
+            pid = process.th32ProcessID;
+        }
     }
-    ~scoped_handle() { if (handle != NULL && handle != INVALID_HANDLE_VALUE) CloseHandle(handle); }
 
-    operator HANDLE() const { return handle; }
+    if (pid)
+    {
+        ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
+        VARIANT vtProp = data->vtProp;
 
-    HANDLE* operator&() { return &handle; }
-    const HANDLE* operator&() const { return &handle; }
-};
-
-
+        auto detect_time = std::chrono::high_resolution_clock::now();
+        std::cout << "FOUND Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(detect_time - data->dData->pr_start_tm).count() << std::endl;
+    }
+    else
+    {
+        std::cout << "NOT FOUND\n";
+    }
+}
 
 void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work))
 {

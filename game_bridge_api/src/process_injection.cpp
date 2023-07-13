@@ -1,9 +1,12 @@
 #include "process_injection.h"
+
+#include <TlHelp32.h>
+#include <sddl.h>
+#include <AclAPI.h>
+
 #include <string>
 #include <iostream>
 #include <chrono>
-
-#include "logger.h"
 
 static void update_acl_for_uwp(LPWSTR path)
 {
@@ -118,7 +121,7 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 	// Only for debugging, log dlls inside the payload
 	for (int i = 0; i < num_dlls; i++)
 	{
-		WLOG << data.load_path[i];
+		std::wcout << data.load_path[i] << "\n";
 	}
 
 	// Make sure the DLL has permissions set up for 'ALL_APPLICATION_PACKAGES'
