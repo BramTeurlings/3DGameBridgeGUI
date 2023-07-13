@@ -11,66 +11,68 @@
 #include <AclAPI.h>
 #include <TlHelp32.h>
 
+struct ThreadSpecificData
+{
+    ProcessDetectionData* dData;
+    VARIANT vtProp;
+    IWbemClassObject* apObjectl;
+};
+
 static inline ProcessDetectionData detection_data;
 // Thread stuff
 // Todo May need a mutex when setting the callback, leaving it out for now
-PTP_WORK_CALLBACK workcallback = WinThreadPool::DefaultCallback;
+PTP_WORK_CALLBACK workcallback = WmiSearchCallback;
 WinThreadPool thread_pool;
 
 void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
+    ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
+    VARIANT vtProp = data->vtProp;
     IWbemClassObject* pProcessObj = nullptr;
-if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
-{
-	// Get process data
-             VARIANT vtProcessId {};
-         	if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
-         	{
-         		process_data.pid = vtProcessId.intVal;
-         	}
+    if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
+    {
+        // Get process data
+        VARIANT vtProcessId{};
+        Win32ProcessData process_data;
+        if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
+        {
+            process_data.pid = vtProcessId.intVal;
+        }
 
-             VARIANT vtName {};
-         	if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
-         	{
-         		size_t char_number = 0;
-         		std::wstring wexe_path(vtName.bstrVal);
-         		CHAR exe_path[MAX_PATH];
-         		errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
-         		if (err != EINVAL)
-         		{
-         			process_data.executable_path = exe_path;
-         		}
-         		else
-         		{
-         			wprintf(L"Process detection: Couldn't convert executable path to wstring");
-         		}
-         	}
+        VARIANT vtName{};
+        if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
+        {
+            size_t char_number = 0;
+            std::wstring wexe_path(vtName.bstrVal);
+            CHAR exe_path[MAX_PATH];
+            errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
+            if (err != EINVAL)
+            {
+                process_data.executable_path = exe_path;
+            }
+            else
+            {
+                wprintf(L"Process detection: Couldn't convert executable path to wstring");
+            }
+        }
 
-             // Add message to queue before releasing pointers
-             if (process_data.pid > 0 && !process_data.executable_path.empty())
-             {
-                 message_queue.push(process_data);
-                 semaphore_message_queue.notify();
-             }
-             else
-             {
-         		wprintf(L"Couldn't enqueue message from wmi\n");
-         	}
+        // Do injection here
 
-             // Performance check
-         	auto time_after = std::chrono::high_resolution_clock::now();
+        // Performance check
+        auto time_after = std::chrono::high_resolution_clock::now();
 
-             std::stringstream ss; ss << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
-             std::cout << ss.str();
+        std::stringstream ss; ss << "ms Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << " --- " << std::filesystem::path(process_data.executable_path).filename().string() << std::endl;
+        std::cout << ss.str();
 
-         	VariantClear(&vtProcessId);
-         	VariantClear(&vtName);
-         }
-         // Delete process object
-         pProcessObj->Release();
+        VariantClear(&vtProcessId);
+        VariantClear(&vtName);
+    }
+    // Delete process object
+    pProcessObj->Release();
+    data->apObjectl->Release(); // Release reference set in the Indicate callback function
 
-         // Delete variant
-         VariantClear(&vtProp);
+    // Delete variant
+    VariantClear(&vtProp);
 }
 
 void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
@@ -133,15 +135,20 @@ HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
     for (LONG i = 0; i < lObjectCount; i++)
     {
-		// Performance check
-		auto time_before = std::chrono::high_resolution_clock::now();
-        Win32ProcessData process_data;
+        // Create new data here so every thread has their own wmi object data. Todo maybe remove the new call later for extra performance
+        ThreadSpecificData* thread_data = new ThreadSpecificData();
+        // Detection data is shared between threads, but is only read from. When reloading the game list, make sure no threads are reading from this variable.
+        // This way, synchronization should not be necessary.
+        thread_data->dData = &detection_data;
 
         VARIANT vtProp {};
 		if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
 		{
             // Add ref here, release in the worker thread.
-            thread_pool.StartWork(workcallback, &detection_data);
+            apObjArray[i]->AddRef();
+            thread_data->apObjectl = apObjArray[i];
+            thread_data->vtProp = vtProp;
+            thread_pool.StartWork(workcallback, thread_data);
 
 		}
 

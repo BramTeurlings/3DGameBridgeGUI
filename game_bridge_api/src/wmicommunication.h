@@ -18,6 +18,7 @@
 #endif
 
 void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work));
+void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
 
 class Semaphore {
 public:

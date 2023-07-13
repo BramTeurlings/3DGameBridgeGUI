@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <Wbemidl.h>
 
 struct ProcessDetectionData
 {
