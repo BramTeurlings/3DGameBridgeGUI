@@ -10,7 +10,7 @@
 static inline ProcessDetectionData detection_data;
 // Thread stuff
 // Todo May need a mutex when setting the callback, leaving it out for now
-PTP_WORK_CALLBACK workcallback = ProcessEnumerationCallback;
+PTP_WORK_CALLBACK workcallback = WmiSearchCallback;
 WinThreadPool thread_pool;
 
 loading_data payload64;
@@ -60,14 +60,22 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
         std::string exe_name = std::filesystem::path(process_data.executable_path).filename().string();
         std::for_each(data->dData->supported_titles.begin(), data->dData->supported_titles.end(), [&](std::string a) {
             if (exe_name.compare(a) == 0) {
+
+                auto th_before = std::chrono::high_resolution_clock::now();
+                auto thread_list = WinThreadPool::SuspendThreadsInProcess(process_data.pid);
+                auto th_after = std::chrono::high_resolution_clock::now();
+
                 // Performance check
                 auto b_before = std::chrono::high_resolution_clock::now();
                 InjectIntoApplication(process_data.pid, payload64);
+
+                WinThreadPool::ResumeThreadsAndClose(thread_list);
 
                 // Performance check
                 auto time_after = std::chrono::high_resolution_clock::now();
 
                 std::stringstream ss; ss << "injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - b_before).count() << " --- " << exe_name << std::endl;
+                ss << "Thread suspend time: " << std::chrono::duration_cast<std::chrono::milliseconds>(th_after - th_before).count() << std::endl;
                 ss << "wmi process detect time: " << std::chrono::duration_cast<std::chrono::milliseconds>(c_before - data->dData->pr_start_tm).count() << std::endl;
                 ss << "exe search time micro: " << std::chrono::duration_cast<std::chrono::microseconds>(b_before - c_before).count() << std::endl;
                 ss << "ms Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << std::endl;

@@ -19,6 +19,9 @@ public:
 	WinThreadPool();
 	~WinThreadPool();
 
+    static std::vector<HANDLE> SuspendThreadsInProcess(DWORD processId);
+    static void ResumeThreadsAndClose(const std::vector<HANDLE>& threads);
+
 	bool StartWork(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work), PVOID parameter);
     static void DefaultCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
 };
