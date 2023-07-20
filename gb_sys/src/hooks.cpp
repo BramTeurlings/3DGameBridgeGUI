@@ -4,6 +4,22 @@
 HHOOK g_hook = NULL;
 HINSTANCE g_hInstance = NULL;
 
+LRESULT CALLBACK WindowProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION)
+    {
+        CWPRETSTRUCT* pMsg = (CWPRETSTRUCT*)lParam;
+        if (pMsg->message == WM_CREATE)
+        {
+            // A new window is created
+            HWND hWnd = (HWND)pMsg->lParam;
+            // Do something with the new window handle
+        }
+    }
+
+    return CallNextHookEx(g_hook, nCode, wParam, lParam);
+}
+
 void proc(WPARAM wParam, LPARAM lParam) {
     // Extract the process ID from the window handle
     HWND hWnd = reinterpret_cast<HWND>(lParam);
@@ -69,12 +85,10 @@ LRESULT CALLBACK HookCallback(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(g_hook, nCode, wParam, lParam);
 }
 
-extern "C" GAME_BRIDGE_API void InstallHook()
+extern "C" GAME_BRIDGE_API void InstallHook(HINSTANCE hInstance)
 {
     // Install the hook
-    // Get the module handle of the current executable
-    g_hInstance = GetModuleHandle(NULL);
-
+    g_hInstance = hInstance;
     g_hook = SetWindowsHookEx(WH_SHELL, HookCallback, g_hInstance, 0);
     if (!g_hook)
     {

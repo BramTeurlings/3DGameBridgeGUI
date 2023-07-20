@@ -1,7 +1,7 @@
 #include "app.h"
-#include <Windows.h>
 #include <iostream>
 #include <filesystem>
+#include <chrono>
 
 #include "wmicommunication.h"
 #include "gamebridgeapi.h"
@@ -9,7 +9,7 @@
 #include "gamebridgeapi.h"
 #include "logger.h"
 #include "threads.h"
-#include <chrono>
+#include "hooks.h"
 
 namespace fs = std::filesystem;
 
@@ -60,13 +60,8 @@ namespace game_bridge {
 			// Wait for a process tobe added to the queue
 			process_detection.pSink->semaphore_message_queue.wait();
 
-			//process_detection.GetTime().c_after = std::chrono::high_resolution_clock::now();
-
-			//process_detection.GetTime().d_before = std::chrono::high_resolution_clock::now();
 			Win32ProcessData process_data = process_detection.pSink->message_queue.front();
 			process_detection.pSink->message_queue.pop();
-			// LOG << "pid: " << process_data.pid << " path: " << process_data.executable_path;
-			//process_detection.GetTime().d_after = std::chrono::high_resolution_clock::now();
 
             fs::path detected_exe(process_data.executable_path);
             std::string filename = detected_exe.filename().string();
@@ -101,7 +96,10 @@ namespace game_bridge {
 		ExitExternalProgram();
     }
 
-
+	void GameBridgeInjectionCLI::RunMessageInterceptHooks(HINSTANCE hInstance, std::string sr_binary_path)
+	{
+		InstallHook(hInstance);
+	}
 }
 
 PROCESS_INFORMATION processInfo;

@@ -23,6 +23,6 @@ namespace game_bridge {
     extern "C" GAME_BRIDGE_API void inject_into_process();
 }
 
-extern "C" GAME_BRIDGE_API void InstallHook();
+extern "C" GAME_BRIDGE_API void InstallHook(HINSTANCE hInstance);
 extern "C" GAME_BRIDGE_API void UninstallHook();
 extern "C" GAME_BRIDGE_API LRESULT CALLBACK HookCallback(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam);
