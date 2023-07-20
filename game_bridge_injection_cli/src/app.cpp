@@ -56,6 +56,7 @@ namespace game_bridge {
 		process_detection.GetDetectionData().pr_start_tm = std::chrono::high_resolution_clock::now();
 
 		// Keep the app running
+		// Use only when using a message queue for wmi
 		while (true) {
 			// Wait for a process tobe added to the queue
 			process_detection.pSink->semaphore_message_queue.wait();
@@ -66,39 +67,23 @@ namespace game_bridge {
             fs::path detected_exe(process_data.executable_path);
             std::string filename = detected_exe.filename().string();
 
-			bool break_true = false;
-            std::for_each(executable_names.begin(), executable_names.end(), [&](std::string a) {
+			// Go through every supported game in the list and find the detected game
+			std::for_each(executable_names.begin(), executable_names.end(), [&](std::string a) {
 				if (filename.compare(a) == 0) {
 
 
-					// Performance check
-					//process_detection.GetTime().b_before = std::chrono::high_resolution_clock::now();
-					//InjectIntoApplication(process_data.pid, payload64);
-					//process_detection.GetTime().b_after = std::chrono::high_resolution_clock::now();
-
-					
-
-					//LOG << "Injected into supported game";
-					//LOG << "Process detection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(process_detection.GetTime().c_after - process_detection.GetTime().a_before).count();
-					//LOG << "Queue pop time: " << std::chrono::duration_cast<std::chrono::milliseconds>(process_detection.GetTime().d_after - process_detection.GetTime().d_before).count();
-					//LOG << "Injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(process_detection.GetTime().b_after - process_detection.GetTime().b_before).count();
-					//LOG << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(process_detection.GetTime().a_after - process_detection.GetTime().a_before).count();
-					break_true = true;
 				}
 				});
-
-			if (break_true) {
-				break;
-			}
-        }
+		}
 
 		Sleep(2000);
 		ExitExternalProgram();
     }
 
+	
 	void GameBridgeInjectionCLI::RunMessageInterceptHooks(HINSTANCE hInstance, std::string sr_binary_path)
 	{
-		InstallHook(hInstance);
+		InitializeMSAA(hInstance);
 	}
 }
 
