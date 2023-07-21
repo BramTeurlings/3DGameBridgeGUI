@@ -57,6 +57,7 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
         }
 
         // Do injection here
+        // TODO remove performance measurements
         std::string exe_name = std::filesystem::path(process_data.executable_path).filename().string();
         std::for_each(data->dData->supported_titles.begin(), data->dData->supported_titles.end(), [&](std::string a) {
             if (exe_name.compare(a) == 0) {
@@ -82,7 +83,6 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
                 std::cout << ss.str();
             }
             });
-
 
         VariantClear(&vtProcessId);
         VariantClear(&vtName);
@@ -228,9 +228,14 @@ HRESULT EventSink::SetStatus(
     return WBEM_S_NO_ERROR;
 }    // end of EventSink.cpp
 
-void WMICommunication::initialize_payload(const std::string& sr_binary_path)
+void WMICommunication::InitializePayload(const std::string& sr_binary_path)
 {
     CreatePayload(sr_binary_path, payload64);
+}
+
+void WMICommunication::SetReshadeConfigPath(const std::string& reshade_config_path)
+{
+    SetReshadeConfigPathInPayload(reshade_config_path, payload64);
 }
 
 long WMICommunication::InitializeObjects(const char* query)

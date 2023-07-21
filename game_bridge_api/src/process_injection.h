@@ -28,6 +28,8 @@ struct loading_data
 	decltype(&LoadLibraryW) LoadLibraryW = nullptr;
 	const WCHAR env_var_name[30] = L"RESHADE_DISABLE_LOADING_CHECK";
 	const WCHAR env_var_value[2] = L"1";
+	const WCHAR gb_env_var_name[15] = L"GB_CONFIG_PATH";
+	WCHAR gb_env_var_value[MAX_PATH] = L"";
 	decltype(&SetEnvironmentVariableW) SetEnvironmentVariableW = nullptr;
 };
 
@@ -56,7 +58,12 @@ static void update_acl_for_uwp(LPWSTR path);
 #if RESHADE_LOADING_THREAD_FUNC
 static DWORD WINAPI loading_thread_func(loading_data* arg)
 {
+	// Set environment variables
+	// Reshade
 	arg->SetEnvironmentVariableW(arg->env_var_name, arg->env_var_value);
+	// Game Bridge
+	arg->SetEnvironmentVariableW(arg->env_var_name, arg->env_var_value);
+
 	int err = 0;
 	for (int i = 0; i < NUM_DLLS; i++) {
 		if (arg->LoadLibraryW(arg->load_path[i]) == NULL) {
@@ -69,6 +76,21 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 #endif
 
 GAME_BRIDGE_API int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit = false);
+/**
+ * \brief Set Reshade config path to be injected and loaded by Reshade.
+ * Note that this internally converts the string to a wide character string and is slower than when passing a wide string.
+ * \param reshade_config_path The path
+ * \param data The payload
+ * \return 0 if success
+ */
+GAME_BRIDGE_API int SetReshadeConfigPathInPayload(const std::string& reshade_config_path, loading_data& data);
+/**
+ * \brief Set Reshade config path to be injected and loaded by Reshade.
+ * \param reshade_config_path The path
+ * \param data The payload
+ * \return 0 if success
+ */
+GAME_BRIDGE_API int SetReshadeConfigPathInPayload(const std::wstring& reshade_config_path, loading_data& data);
 GAME_BRIDGE_API int GetPID(std::string process_name);
 
 GAME_BRIDGE_API inline int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time = 50)

@@ -4,6 +4,7 @@
 #pragma comment( lib, "oleacc" )
 
 #include <iostream>
+#include <sstream>
 
 // Global variable.
 HWINEVENTHOOK g_hook;
@@ -13,15 +14,15 @@ HHOOK hHook;
 //
 void InitializeMSAA(HINSTANCE hInstance)
 {
-    //CoInitialize(NULL);
-    //g_hook = SetWinEventHook(
-    //    EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY,  // Range of events (4 to 5).
-    //    NULL,                                          // Handle to DLL.
-    //    HandleWinEvent,                                // The callback.
-    //    0, 0,              // Process and thread IDs of interest (0 = all)
-    //    WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS); // Flags.
+    CoInitialize(NULL);
+    g_hook = SetWinEventHook(
+        EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY,  // Range of events (4 to 5).
+        NULL,                                          // Handle to DLL.
+        HandleWinEvent,                                // The callback.
+        0, 0,              // Process and thread IDs of interest (0 = all)
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS); // Flags.
 
-    hHook = SetWindowsHookEx(WH_CALLWNDPROCRET, WindowProc, hInstance, 0);
+    //hHook = SetWindowsHookEx(WH_CALLWNDPROCRET, WindowProc, hInstance, 0);
 }
 
 // Unhooks the event and shuts down COM.
@@ -44,16 +45,21 @@ void CALLBACK HandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
     if ((hr == S_OK) && (pAcc != NULL))
     {
         BSTR bstrName;
-        pAcc->get_accName(varChild, &bstrName);
-        if (event == EVENT_SYSTEM_MENUSTART)
-        {
-            std::cout << "Begin: " << std::endl;
+        std::wstring gg;
+        pAcc->get_accName(varChild, (BSTR*)gg.data());
+        gg.resize(CHAR_MAX);
+        if (bstrName) {
+            //if (event == EVENT_OBJECT_CREATE)
+            //{
+            //    std::cout << "Begin: " << "\n";
+            //}
+            //else if (event == EVENT_OBJECT_DESTROY)
+            //{
+            //    std::cout << "End:   " << "\n";
+            //}
+            std::wstringstream ss; ss << L"Name: " << bstrName << L"\n";
+            std::wcout << ss.str();
         }
-        else if (event == EVENT_SYSTEM_MENUEND)
-        {
-            std::cout << "End:   " << std::endl;
-        }
-        std::cout << "%S" << bstrName << std::endl;
         SysFreeString(bstrName);
         pAcc->Release();
     }

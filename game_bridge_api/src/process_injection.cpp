@@ -133,6 +133,30 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 	data.GetLastError = GetLastError;
 	data.LoadLibraryW = LoadLibraryW;
 	data.SetEnvironmentVariableW = SetEnvironmentVariableW;
+	return 0;
+}
+
+int SetReshadeConfigPathInPayload(const std::string& reshade_config_path, loading_data& data)
+{
+	// Convert to wide string
+	size_t converted_chars;
+	WCHAR w_reshade_config_path[MAX_PATH];
+	errno_t err = mbstowcs_s(&converted_chars, w_reshade_config_path, reshade_config_path.size() + 1, reshade_config_path.c_str(), _TRUNCATE);
+	if (err == EINVAL)
+	{
+		wprintf(L"Couldn't convert executable path to wstring");
+		return 1;
+	}
+
+	SetReshadeConfigPathInPayload(w_reshade_config_path, data);
+	return 0;
+}
+
+int SetReshadeConfigPathInPayload(const wchar_t* w_reshade_config_path, loading_data& data)
+{
+	// Set Game Bridge environment variable
+	wcscpy(data.gb_env_var_value, w_reshade_config_path);
+	return 0;
 }
 #endif
 

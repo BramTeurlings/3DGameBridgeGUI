@@ -89,7 +89,9 @@ extern "C" GAME_BRIDGE_API void InstallHook(HINSTANCE hInstance)
 {
     // Install the hook
     g_hInstance = hInstance;
-    g_hook = SetWindowsHookEx(WH_SHELL, HookCallback, g_hInstance, 0);
+    //HINSTANCE dllInst = GetModuleHandleA("GameBridgeSysd.dll");
+    HINSTANCE dllInst = LoadLibrary(TEXT("GameBridgeSysd.dll"));
+    g_hook = SetWindowsHookEx(WH_SHELL, HookCallback, dllInst, 0);
     if (!g_hook)
     {
         std::cerr << "Failed to install hook: " << GetLastError() << std::endl;

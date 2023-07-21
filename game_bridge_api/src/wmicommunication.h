@@ -54,6 +54,7 @@ private:
 struct ProcessDetectionData
 {
     std::vector <std::string> supported_titles;
+    std::vector <std::string> supported_titles_config_paths;
     std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
 };
 
@@ -101,7 +102,8 @@ public:
     // Todo make this less bad
     EventSink* pSink = NULL;
 
-    void initialize_payload(const std::string& sr_binary_path);
+    void InitializePayload(const std::string& sr_binary_path);
+    void SetReshadeConfigPath(const std::string& reshade_config_path);
     long InitializeObjects(const char* query);
     long Deinitialize();
 

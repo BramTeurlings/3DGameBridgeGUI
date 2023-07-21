@@ -199,11 +199,12 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nC
     }
 
     game_bridge::GameBridgeInjectionCLI application;
-    //application.RunAutomaticInjector(simulated_reality_bin_path);
+    application.RunAutomaticInjector(simulated_reality_bin_path);
 
     if (InitWindow(hInstance, hPrevInstance, lpszCmdLine, 1)) {
 
         application.RunMessageInterceptHooks(hInstance, simulated_reality_bin_path);
-        MessageLoop();
     }
+
+	MessageLoop();
 }

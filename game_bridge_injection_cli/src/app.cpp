@@ -23,6 +23,16 @@ namespace game_bridge {
 
 	}
 
+	void TestWithApplication()
+    {
+		///////////////////////// Performance measurements
+		LOG << "Waiting 5 seconds for initialize process events to pass...";
+		Sleep(5000);
+		LOG << "Start measurement";
+		RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
+		
+    }
+
     void GameBridgeInjectionCLI::RunAutomaticInjector(std::string sr_binary_path)
     {
         // Load configuration
@@ -33,54 +43,30 @@ namespace game_bridge {
         game_bridge::init_api();
         game_bridge::subscribe_to_pocess_events();
 
+		// Init WMI
         WMICommunication process_detection("");
 
 		// Wack way of doing this, but it was quick
-		process_detection.initialize_payload(sr_binary_path);
+		process_detection.InitializePayload(sr_binary_path);
 
+		// Put supported titles in a separate list
 		std::vector<std::string> executable_names;
+		std::vector<std::string> executable_names_config_paths;
 		for (GameConfiguration config : supported_games) {
 			executable_names.push_back(config.exe_name);
+			executable_names.push_back(config.);
 		}
 		process_detection.GetDetectionData().supported_titles = executable_names;
 
         // Init WMI here for now
 		//SetIndicateEventCallback();
         process_detection.InitializeObjects("");
-        
-		///////////////////////// Performance measurements
-		LOG << "Waiting 5 seconds for initialize process events to pass...";
-		Sleep(5000);
-		LOG << "Start measurement";
-		RunExternalProgram("C:/Program Files (x86)/Steam/steamapps/common/ULTRAKILL/ULTRAKILL.exe");
-		process_detection.GetDetectionData().pr_start_tm = std::chrono::high_resolution_clock::now();
 
-		// Keep the app running
-		// Use only when using a message queue for wmi
-		while (true) {
-			// Wait for a process tobe added to the queue
-			process_detection.pSink->semaphore_message_queue.wait();
-
-			Win32ProcessData process_data = process_detection.pSink->message_queue.front();
-			process_detection.pSink->message_queue.pop();
-
-            fs::path detected_exe(process_data.executable_path);
-            std::string filename = detected_exe.filename().string();
-
-			// Go through every supported game in the list and find the detected game
-			std::for_each(executable_names.begin(), executable_names.end(), [&](std::string a) {
-				if (filename.compare(a) == 0) {
-
-
-				}
-				});
-		}
-
-		Sleep(2000);
-		ExitExternalProgram();
+		// For measuring injection time with an application
+		//TestWithApplication();
+		//process_detection.GetDetectionData().pr_start_tm = std::chrono::high_resolution_clock::now();
     }
 
-	
 	void GameBridgeInjectionCLI::RunMessageInterceptHooks(HINSTANCE hInstance, std::string sr_binary_path)
 	{
 		InitializeMSAA(hInstance);
