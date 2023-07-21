@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.23)
 
-project (3DGameBridgeApi VERSION 0.1)
+project (GameBridgeApi VERSION 0.1)
 message("3D Game Bridge Version: ${3DGameBridgeApi_VERSION}")
 
 set(CMAKE_DEBUG_POSTFIX d)
 
-add_library(3DGameBridgeApi SHARED
+add_library(GameBridgeApi SHARED
 src/gamebridgeapi.h
 src/gamebridgeapi.cpp
 src/wmicommunication.h
@@ -16,12 +16,12 @@ src/threads.h
 src/threads.cpp
 )
 
-target_compile_definitions(3DGameBridgeApi PUBLIC GAME_BRIDGE_API_EXPORTS)
-set_target_properties(3DGameBridgeApi PROPERTIES LINKER_LANGUAGE CXX)
+target_compile_definitions(GameBridgeApi PUBLIC GAME_BRIDGE_API_EXPORTS)
+set_target_properties(GameBridgeApi PROPERTIES LINKER_LANGUAGE CXX)
 
-set_target_properties(3DGameBridgeApi PROPERTIES PUBLIC_HEADER src/gamebridge.h)
+set_target_properties(GameBridgeApi PROPERTIES PUBLIC_HEADER src/gamebridge.h)
 
-install(TARGETS 3DGameBridgeApi
+install(TARGETS GameBridgeApi
         EXPORT 3DGameBridgeApiTargets
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
@@ -30,10 +30,10 @@ install(TARGETS 3DGameBridgeApi
 
 install(EXPORT 3DGameBridgeApiTargets
 		FILE 3DGameBridgeApiTargets.cmake
-		DESTINATION lib/cmake/3DGameBridgeApi
+		DESTINATION lib/cmake/GameBridgeApi
 )
 
-target_include_directories(3DGameBridgeApi INTERFACE
+target_include_directories(GameBridgeApi INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 	$<INSTALL_INTERFACE:include>
 )
@@ -41,7 +41,7 @@ target_include_directories(3DGameBridgeApi INTERFACE
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/3DGameBridgeApiConfig.cmake
-    INSTALL_DESTINATION lib/cmake/3DGameBridgeApi
+    INSTALL_DESTINATION lib/cmake/GameBridgeApi
 )
 
 write_basic_package_version_file(
@@ -53,5 +53,5 @@ write_basic_package_version_file(
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/GameBridgeApiConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/GameBridgeConfigApiVersion.cmake
-  DESTINATION lib/cmake/3DGameBridgeApi
+  DESTINATION lib/cmake/GameBridgeApi
 )

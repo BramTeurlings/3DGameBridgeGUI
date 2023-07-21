@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.23)
-project (3DGameBridgeGUI VERSION 0.1)
+project (GameBridgeGUI VERSION 0.1)
 
-add_executable(3DGameBridgeGUI
+add_executable(GameBridgeGUI
 src/main.cpp
 )
 
-set_target_properties(3DGameBridgeGUI PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(GameBridgeGUI PROPERTIES LINKER_LANGUAGE CXX)
 
-target_link_libraries(3DGameBridgeGUI PRIVATE 3DGameBridgeApi)
+target_link_libraries(GameBridgeGUI PRIVATE GameBridgeApi)
 
 # Copy all linked dlls to build executable directory
 add_custom_command(
-    TARGET 3DGameBridgeGUI POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:3DGameBridgeGUI> $<TARGET_FILE_DIR:3DGameBridgeGUI>
+    TARGET GameBridgeGUI POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:GameBridgeGUI> $<TARGET_FILE_DIR:GameBridgeGUI>
 )
