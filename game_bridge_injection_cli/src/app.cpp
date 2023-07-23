@@ -1,11 +1,8 @@
 #include "app.h"
 #include <iostream>
-#include <filesystem>
 #include <chrono>
 
 #include "wmicommunication.h"
-#include "gamebridgeapi.h"
-#include "process_injection.h"
 #include "gamebridgeapi.h"
 #include "logger.h"
 #include "threads.h"
@@ -51,10 +48,10 @@ namespace game_bridge {
 
 		// Put supported titles in a separate list
 		std::vector<std::string> executable_names;
-		std::vector<std::string> executable_names_config_paths;
+		std::vector<std::string> executable_config_paths;
 		for (GameConfiguration config : supported_games) {
 			executable_names.push_back(config.exe_name);
-			executable_names.push_back(config.);
+			executable_config_paths.push_back(DetermineGameFixPath(config.exe_name, SuperDepth));
 		}
 		process_detection.GetDetectionData().supported_titles = executable_names;
 

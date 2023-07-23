@@ -6,6 +6,12 @@ using json = nlohmann::json;
 
 #define SRGB_CONFIGURATION_PATH "./config_file.json"
 
+typedef enum FixType: uint8_t
+{
+    SuperDepth,
+    Geo11
+}FixType;
+
 namespace game_bridge {
     struct GameConfiguration {
         std::string exe_name;
@@ -36,4 +42,5 @@ namespace game_bridge {
      */
     std::vector<GameConfiguration> LoadConfiguration();
 
+    std::string DetermineGameFixPath(const std::string& exe_path, int fix_type);
 }

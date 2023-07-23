@@ -4,7 +4,6 @@
 #include <sddl.h>
 #include <AclAPI.h>
 
-#include <string>
 #include <iostream>
 #include <chrono>
 

@@ -7,6 +7,8 @@
 #include <sstream>
 #pragma comment(lib, "wbemuuid.lib")
 
+#include "process_injection.h"
+
 static inline ProcessDetectionData detection_data;
 // Thread stuff
 // Todo May need a mutex when setting the callback, leaving it out for now

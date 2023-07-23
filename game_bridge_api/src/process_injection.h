@@ -73,7 +73,6 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 	}
 	return err;
 }
-#endif
 
 GAME_BRIDGE_API int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool use_32_bit = false);
 /**
@@ -83,14 +82,16 @@ GAME_BRIDGE_API int CreatePayload(const std::string& sr_binary_path, loading_dat
  * \param data The payload
  * \return 0 if success
  */
-GAME_BRIDGE_API int SetReshadeConfigPathInPayload(const std::string& reshade_config_path, loading_data& data);
+GAME_BRIDGE_API inline int SetReshadeConfigPathInPayload(const std::string& reshade_config_path, loading_data& data);
 /**
  * \brief Set Reshade config path to be injected and loaded by Reshade.
- * \param reshade_config_path The path
+ * \param w_reshade_config_path The path
  * \param data The payload
  * \return 0 if success
  */
-GAME_BRIDGE_API int SetReshadeConfigPathInPayload(const std::wstring& reshade_config_path, loading_data& data);
+GAME_BRIDGE_API inline int SetReshadeConfigPathInPayload(const wchar_t* w_reshade_config_path, loading_data& data);
+#endif
+
 GAME_BRIDGE_API int GetPID(std::string process_name);
 
 GAME_BRIDGE_API inline int InjectIntoApplication(uint32_t pid, const loading_data& payload, uint32_t sleep_time = 50)
