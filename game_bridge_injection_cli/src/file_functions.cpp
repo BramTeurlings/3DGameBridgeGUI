@@ -1,10 +1,8 @@
 #include "file_functions.h"
 
-#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-namespace fs = std::filesystem;
 
 namespace game_bridge {
     bool WriteTextToFile(const std::string& path, const std::string& buffer)
@@ -42,5 +40,16 @@ namespace game_bridge {
         }
 
         return stream.str();
+    }
+
+    bool CopyFile(const fs::path& source, const fs::path& destination)
+    {
+        if(!fs::exists(source))
+        {
+            return false;
+        }
+
+        fs::copy(source, destination);
+        return true;
     }
 }

@@ -154,7 +154,30 @@ int SetReshadeConfigPathInPayload(const std::string& reshade_config_path, loadin
 int SetReshadeConfigPathInPayload(const wchar_t* w_reshade_config_path, loading_data& data)
 {
 	// Set Game Bridge environment variable
-	wcscpy(data.gb_env_var_value, w_reshade_config_path);
+	wcscpy(data.gb_env_config_value, w_reshade_config_path);
+	return 0;
+}
+
+int SetReshadePresetPathInPayload(const std::string& reshade_preset_path, loading_data& data)
+{
+	// Convert to wide string
+	size_t converted_chars;
+	WCHAR w__path[MAX_PATH];
+	errno_t err = mbstowcs_s(&converted_chars, w__path, reshade_preset_path.size() + 1, reshade_preset_path.c_str(), _TRUNCATE);
+	if (err == EINVAL)
+	{
+		wprintf(L"Couldn't convert executable path to wstring");
+		return 1;
+	}
+
+	SetReshadePresetPathInPayload(w__path, data);
+	return 0;
+}
+
+int SetReshadePresetPathInPayload(const wchar_t* w_reshade_config_path, loading_data& data)
+{
+	// Set Game Bridge environment variable
+	wcscpy(data.gb_env_preset_value, w_reshade_config_path);
 	return 0;
 }
 #endif

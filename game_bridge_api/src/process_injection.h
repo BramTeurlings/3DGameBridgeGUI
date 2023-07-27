@@ -28,8 +28,10 @@ struct loading_data
 	decltype(&LoadLibraryW) LoadLibraryW = nullptr;
 	const WCHAR env_var_name[30] = L"RESHADE_DISABLE_LOADING_CHECK";
 	const WCHAR env_var_value[2] = L"1";
-	const WCHAR gb_env_var_name[15] = L"GB_CONFIG_PATH";
-	WCHAR gb_env_var_value[MAX_PATH] = L"";
+	const WCHAR gb_env_config_name[15] = L"GB_CONFIG_PATH";
+	WCHAR gb_env_config_value[MAX_PATH] = L"";
+	const WCHAR gb_env_preset_name[15] = L"GB_PRESET_PATH";
+	WCHAR gb_env_preset_value[MAX_PATH] = L"";
 	decltype(&SetEnvironmentVariableW) SetEnvironmentVariableW = nullptr;
 };
 
@@ -62,7 +64,8 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 	// Reshade
 	arg->SetEnvironmentVariableW(arg->env_var_name, arg->env_var_value);
 	// Game Bridge
-	arg->SetEnvironmentVariableW(arg->env_var_name, arg->env_var_value);
+	//arg->SetEnvironmentVariableW(arg->gb_env_config_name, arg->gb_env_config_value);
+	arg->SetEnvironmentVariableW(arg->gb_env_preset_name, arg->gb_env_preset_value);
 
 	int err = 0;
 	for (int i = 0; i < NUM_DLLS; i++) {
@@ -90,6 +93,21 @@ GAME_BRIDGE_API inline int SetReshadeConfigPathInPayload(const std::string& resh
  * \return 0 if success
  */
 GAME_BRIDGE_API inline int SetReshadeConfigPathInPayload(const wchar_t* w_reshade_config_path, loading_data& data);
+/**
+ * \brief Set Reshade preset path to be injected and loaded by Reshade.
+ * Note that this internally converts the string to a wide character string and is slower than when passing a wide string.
+ * \param reshade_preset_path The path
+ * \param data The payload
+ * \return 0 if success
+ */
+GAME_BRIDGE_API inline int SetReshadePresetPathInPayload(const std::string& reshade_preset_path, loading_data& data);
+/**
+ * \brief Set Reshade preset path to be injected and loaded by Reshade.
+ * \param reshade_preset_path The path
+ * \param data The payload
+ * \return 0 if success
+ */
+GAME_BRIDGE_API inline int SetReshadePresetPathInPayload(const wchar_t* reshade_preset_path, loading_data& data);
 #endif
 
 GAME_BRIDGE_API int GetPID(std::string process_name);

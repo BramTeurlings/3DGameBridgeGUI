@@ -2,7 +2,6 @@
 #include <iostream>
 #include <chrono>
 
-#include "wmicommunication.h"
 #include "gamebridgeapi.h"
 #include "logger.h"
 #include "threads.h"
@@ -15,7 +14,7 @@ bool ExitExternalProgram();
 
 namespace game_bridge {
 
-    GameBridgeInjectionCLI::GameBridgeInjectionCLI()
+    GameBridgeInjectionCLI::GameBridgeInjectionCLI(): process_detection(WMICommunication(""))
     {
 
 	}
@@ -40,23 +39,25 @@ namespace game_bridge {
         game_bridge::init_api();
         game_bridge::subscribe_to_pocess_events();
 
-		// Init WMI
-        WMICommunication process_detection("");
-
 		// Wack way of doing this, but it was quick
 		process_detection.InitializePayload(sr_binary_path);
 
 		// Put supported titles in a separate list
 		std::vector<std::string> executable_names;
-		std::vector<std::string> executable_config_paths;
+		std::vector<std::string> config_paths;
+		std::vector<std::string> preset_paths;
+		//TODO If an exe name doesn't have the .exe extensions, add logic to handle that
 		for (GameConfiguration config : supported_games) {
 			executable_names.push_back(config.exe_name);
-			executable_config_paths.push_back(DetermineGameFixPath(config.exe_name, SuperDepth));
+			config_paths.push_back(DetermineGameFixPath(config.exe_name, SuperDepth) + "\\ReShade.ini");
+			preset_paths.push_back(DetermineGameFixPath(config.exe_name, SuperDepth) + "\\ReShadePreset.ini");
 		}
-		process_detection.GetDetectionData().supported_titles = executable_names;
+		WMICommunication::GetDetectionData().supported_titles = executable_names;
+		WMICommunication::GetDetectionData().config_paths = config_paths;
+		WMICommunication::GetDetectionData().preset_paths = preset_paths;
 
         // Init WMI here for now
-		//SetIndicateEventCallback();
+		SetIndicateEventCallback(WmiSearchCallback);
         process_detection.InitializeObjects("");
 
 		// For measuring injection time with an application

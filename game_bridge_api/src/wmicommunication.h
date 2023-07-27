@@ -18,9 +18,9 @@
 #define GAME_BRIDGE_API __declspec(dllimport)
 #endif
 
-void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work));
-void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
-void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
+GAME_BRIDGE_API void SetIndicateEventCallback(void(*work_callback)(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work));
+GAME_BRIDGE_API void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
+GAME_BRIDGE_API void ProcessEnumerationCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work);
 
 class Semaphore {
 public:
@@ -53,7 +53,8 @@ private:
 struct ProcessDetectionData
 {
     std::vector <std::string> supported_titles;
-    std::vector <std::string> supported_titles_config_paths;
+    std::vector <std::string> config_paths;
+    std::vector <std::string> preset_paths;
     std::vector<uint32_t> game_fixes;
     std::chrono::high_resolution_clock::time_point pr_start_tm; //process launch time point
 };

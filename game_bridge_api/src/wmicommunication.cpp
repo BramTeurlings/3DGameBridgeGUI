@@ -5,9 +5,13 @@
 #include <comdef.h>
 #include <filesystem>
 #include <sstream>
+#include <mutex>
 #pragma comment(lib, "wbemuuid.lib")
 
 #include "process_injection.h"
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 static inline ProcessDetectionData detection_data;
 // Thread stuff
@@ -24,9 +28,26 @@ struct ThreadSpecificData
     IWbemClassObject* apObjectl;
 };
 
+bool CopySingleFile(const fs::path& source, const fs::path& destination)
+{
+    if (!fs::exists(source))
+    {
+        return false;
+    }
+
+    try {
+        fs::copy(source, destination, fs::copy_options::overwrite_existing);
+    }
+    catch(std::runtime_error& e)
+    {
+        std::cout << "CopySingleFile error: " << e.what() << std::endl;
+    }
+    return true;
+}
+
 void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK work)
 {
-    ThreadSpecificData* data = reinterpret_cast<ThreadSpecificData*>(parameter);
+    auto* data = static_cast<ThreadSpecificData*>(parameter);
     VARIANT vtProp = data->vtProp;
     IWbemClassObject* pProcessObj = nullptr;
 
@@ -60,13 +81,24 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
 
         // Do injection here
         // TODO remove performance measurements
-        std::string exe_name = std::filesystem::path(process_data.executable_path).filename().string();
+        // TODO Check whether a std::string.find faster is than creating a path, then a string from it like here
+        fs::path fs_exe_path = std::filesystem::path(process_data.executable_path);
+        std::string exe_name = fs_exe_path.filename().string();
+		int exe_index = 0;
         std::for_each(data->dData->supported_titles.begin(), data->dData->supported_titles.end(), [&](std::string a) {
             if (exe_name.compare(a) == 0) {
 
                 auto th_before = std::chrono::high_resolution_clock::now();
                 auto thread_list = WinThreadPool::SuspendThreadsInProcess(process_data.pid);
                 auto th_after = std::chrono::high_resolution_clock::now();
+
+                //Copy reshade config file
+                const fs::path reshade_config_path(data->dData->config_paths[exe_index]);
+                CopySingleFile(reshade_config_path, fs_exe_path.parent_path().append("ReShade.ini"));
+
+                // Set config and preset path
+                SetReshadeConfigPathInPayload(data->dData->config_paths[exe_index], payload64);
+                SetReshadePresetPathInPayload(data->dData->preset_paths[exe_index], payload64);
 
                 // Performance check
                 auto b_before = std::chrono::high_resolution_clock::now();
@@ -80,10 +112,12 @@ void WmiSearchCallback(PTP_CALLBACK_INSTANCE instance, PVOID parameter, PTP_WORK
                 std::stringstream ss; ss << "injection time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - b_before).count() << " --- " << exe_name << std::endl;
                 ss << "Thread suspend time: " << std::chrono::duration_cast<std::chrono::milliseconds>(th_after - th_before).count() << std::endl;
                 ss << "wmi process detect time: " << std::chrono::duration_cast<std::chrono::milliseconds>(c_before - data->dData->pr_start_tm).count() << std::endl;
-                ss << "exe search time micro: " << std::chrono::duration_cast<std::chrono::microseconds>(b_before - c_before).count() << std::endl;
+                ss << "exe search time: " << std::chrono::duration_cast<std::chrono::milliseconds>(b_before - c_before).count() << std::endl;
                 ss << "ms Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - data->dData->pr_start_tm).count() << std::endl;
                 std::cout << ss.str();
             }
+
+            exe_index++;
             });
 
         VariantClear(&vtProcessId);
