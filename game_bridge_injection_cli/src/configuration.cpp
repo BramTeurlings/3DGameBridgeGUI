@@ -58,10 +58,20 @@ namespace game_bridge {
 
     std::string DetermineGameFixPath(const std::string& exe_name, const FixType fix_type)
     {
+        if (exe_name.empty()) {
+            return "";
+        }
+
         fs::path fix(fs::current_path() /= DATA_FOLDER);
         fix.append(FixTypeToString(fix_type));
         if (fix_type == SuperDepth) {
-            fix /= exe_name;
+            // Add exe name to the path and remove the extension from the name
+            fix /= fs::path(exe_name).replace_extension();
+        }
+
+        // Check if the path exists
+        if (!fs::exists(fix)) {
+            return "";
         }
 		return fix.string();
     }

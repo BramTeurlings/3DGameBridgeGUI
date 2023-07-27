@@ -42,5 +42,5 @@ namespace game_bridge {
      */
     std::vector<GameConfiguration> LoadConfiguration();
 
-    std::string DetermineGameFixPath(const std::string& exe_path, int fix_type);
+    std::string DetermineGameFixPath(const std::string& exe_path, const FixType fix_type);
 }
