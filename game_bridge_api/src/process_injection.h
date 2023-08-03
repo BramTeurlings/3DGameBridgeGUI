@@ -12,7 +12,7 @@
 #include <string>
 
 #define RESHADE_LOADING_THREAD_FUNC 1
-#define NUM_DLLS 9
+#define NUM_DLLS 8 + 4
 #define SR_REGISTRY_PATH
 
 #ifdef GAME_BRIDGE_API_EXPORTS

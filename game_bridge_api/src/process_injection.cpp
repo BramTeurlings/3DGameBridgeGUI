@@ -67,7 +67,7 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 	}
 
 	// Required SR dll list
-	WCHAR dlls[NUM_DLLS][MAX_PATH] = {
+	WCHAR sr_dlls[NUM_DLLS][MAX_PATH] = {
 		// List must be in load order
 		L"opencv_world343.dll",
 		L"glog.dll",
@@ -90,13 +90,15 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 		return 1;
 	}
 
+	// DLl list has a constant size, also to keep the payload size lower
+	// Is it an idea to inject reshade first and the addon later? To give reshade the extra speed for injection
 	// Don't include SR dlls for 32 bits because we SR doesn't support it
 	if (!use_32_bit) {
 		for (int i = 0; i < num_dlls - 1; i++) {
 			// First copy sr binary path in the dll list, then directory divide and finally the binary name
 			wcscat_s(data.load_path[i], w_sr_binary_path);
 			wcscat_s(data.load_path[i], L"\\");
-			wcscat_s(data.load_path[i], dlls[i]);
+			wcscat_s(data.load_path[i], sr_dlls[i]);
 
 			if (GetFileAttributesW(data.load_path[i]) == INVALID_FILE_ATTRIBUTES)
 			{
@@ -105,16 +107,30 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 			}
 		}
 	}
-	
-	// Add Reshade dll separately in the last index for 64 bits
-	uint32_t reshade_dll_index = num_dlls - 1;
-	GetCurrentDirectoryW(MAX_PATH, data.load_path[reshade_dll_index]);
-	wcscat_s(data.load_path[reshade_dll_index], L"\\");
-	wcscat_s(data.load_path[reshade_dll_index], reshade_dll_name.c_str());
-	if (GetFileAttributesW(data.load_path[reshade_dll_index]) == INVALID_FILE_ATTRIBUTES)
-	{
-		wprintf(L"\nFailed to find dll at \"%s\"!\n", data.load_path[reshade_dll_index]);
-		return ERROR_FILE_NOT_FOUND;
+
+	// Program dll list
+	//Geo-11 and ReShade
+	WCHAR program_dlls[4][MAX_PATH] = {
+		// List must be in load order
+		L"ReShade64.dll",
+		L"d3d11.dll",
+		L"d3dcompiler_46.dll",
+		L"nvapi64.dll"
+	};
+
+    uint32_t program_dll_index = 0;
+	for (int i = num_dlls - 4; i < num_dlls; i++) {
+		// Add Reshade dll separately in the last index for 64 bits
+		uint32_t reshade_dll_index = i;
+		GetCurrentDirectoryW(MAX_PATH, data.load_path[reshade_dll_index]);
+		wcscat_s(data.load_path[reshade_dll_index], L"\\");
+		wcscat_s(data.load_path[reshade_dll_index], program_dlls[program_dll_index]);
+		if (GetFileAttributesW(data.load_path[reshade_dll_index]) == INVALID_FILE_ATTRIBUTES)
+		{
+			wprintf(L"\nFailed to find dll at \"%s\"!\n", data.load_path[reshade_dll_index]);
+			return ERROR_FILE_NOT_FOUND;
+		}
+		program_dll_index++;
 	}
 
 	// Only for debugging, log dlls inside the payload
