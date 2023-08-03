@@ -12,7 +12,7 @@
 #include <string>
 
 #define RESHADE_LOADING_THREAD_FUNC 1
-#define NUM_DLLS 8 + 4
+#define NUM_DLLS 8 + 3
 #define SR_REGISTRY_PATH
 
 #ifdef GAME_BRIDGE_API_EXPORTS
@@ -71,7 +71,7 @@ static DWORD WINAPI loading_thread_func(loading_data* arg)
 	for (int i = 0; i < NUM_DLLS; i++) {
 		if (arg->LoadLibraryW(arg->load_path[i]) == NULL) {
 			err = arg->GetLastError();
-			return i;
+			//return i;
 		}
 	}
 	return err;

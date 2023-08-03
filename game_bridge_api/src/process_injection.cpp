@@ -112,14 +112,13 @@ int CreatePayload(const std::string& sr_binary_path, loading_data& data, bool us
 	//Geo-11 and ReShade
 	WCHAR program_dlls[4][MAX_PATH] = {
 		// List must be in load order
+		L"d3d11.dll"
 		L"ReShade64.dll",
-		L"d3d11.dll",
-		L"d3dcompiler_46.dll",
-		L"nvapi64.dll"
+		L"nvapi64.dll",
 	};
 
     uint32_t program_dll_index = 0;
-	for (int i = num_dlls - 4; i < num_dlls; i++) {
+	for (int i = num_dlls - 3; i < num_dlls; i++) {
 		// Add Reshade dll separately in the last index for 64 bits
 		uint32_t reshade_dll_index = i;
 		GetCurrentDirectoryW(MAX_PATH, data.load_path[reshade_dll_index]);
