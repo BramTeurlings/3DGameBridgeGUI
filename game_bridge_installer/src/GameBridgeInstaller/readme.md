@@ -1,11 +1,11 @@
 # Game Bridge Installer
-A project for installing Game Bridge and all its dependencies using a simple graphical user interface (GUI) and mininal user input.
+A project for installing Game Bridge and all its dependencies using a simple graphical user interface (GUI) and minimal user input.
 
 ## Instructions
 * Unzip the "Game Bridge Installer" file in an isolated folder anywhere on your computer or on an external drive.
-* Run the "GameBridgeInstaller.exe" file
+* Run the "GameBridgeInstaller.exe" file.
 * Enter a path to the desired game's executable (.exe) file in the input field.
-* Select the game's graphics API
+* Select the game's graphics API:
     * DirectX 9*
     * DirectX 10/11/12 (Using DXGI)*
     * OpenGL (Not supported at the moment)
@@ -59,10 +59,10 @@ The ReShade installer must be formatted as follows:<br/>
 **srReshade\*.addon**
 
 **Note:** Make sure that the version of the srReshade.addon you are installing is compatible with the installed version of the SR Platform. A quick compatibility list is shown below:
-* SR Platform version < = 1.27.4 **COMPATIBLE WITH** 
-    * srReshade.addon with SR Platform 1.27.4 **OR LOWER**
-    * ReShade 5.9.2 **OR LOWER**
-* SR Platform version > = 1.28.0 **COMPATIBLE WITH**
-    * srReshade.addon with SR Platform 1.28.0 **OR HIGHER**
-    * ReShade 5.9.2 **OR HIGHER**
+* SR Platform version < = 1.27.4 is compatible with:
+    * srReshade.addon with SR Platform < = 1.27.4 support
+    * ReShade < = 5.9.2
+* SR Platform version > = 1.28.0 is compatible with:
+    * srReshade.addon with SR Platform > = 1.28.0 support
+    * ReShade > = 5.9.2
 
