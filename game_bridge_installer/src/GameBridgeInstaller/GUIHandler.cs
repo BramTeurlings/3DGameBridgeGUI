@@ -18,7 +18,7 @@ namespace GameBridgeInstaller
         string superDepth3DFixPathPrefix = "SuperDepth3D";
         string superDepth3DDefaultFixPathPrefix = "SuperDepth3D\\Default";
         string superDepth3DShaderPathPrefix = "SuperDepth3D\\ReShade-Shaders";
-        string reshadeShaderPathPrefix = "reshade-shaders\\Shaders";
+        string reshadeShaderPathPrefix = "reshade-shaders";
 
         string SRInstallpath = "";
         string SRAddonPath = "";

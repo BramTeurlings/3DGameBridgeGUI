@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             pathToExeLbl = new TextBox();
             titleLbl = new Label();
             installBtn = new Button();
@@ -77,13 +78,13 @@
             // 
             // graphicsApiCmb
             // 
+            graphicsApiCmb.DropDownStyle = ComboBoxStyle.DropDownList;
             graphicsApiCmb.FormattingEnabled = true;
             graphicsApiCmb.Location = new Point(12, 112);
             graphicsApiCmb.Margin = new Padding(3, 3, 9, 6);
             graphicsApiCmb.Name = "graphicsApiCmb";
             graphicsApiCmb.Size = new Size(346, 23);
             graphicsApiCmb.TabIndex = 2;
-            graphicsApiCmb.DropDownStyle = ComboBoxStyle.DropDownList;
             // 
             // graphicsApiLbl
             // 
@@ -108,6 +109,7 @@
             Controls.Add(installBtn);
             Controls.Add(titleLbl);
             Controls.Add(pathToExeLbl);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Main";
             Text = "Game Bridge Installer";
             ResumeLayout(false);
