@@ -11,8 +11,8 @@ namespace GameBridgeInstaller
         // Opens a Windows Explorer dialog
         // Returns: a path to the specified file
         public string OpenWindowsExplorerDialog();
-        // Installs all necessary files for Game Bridge for the specified .exe file.
-        public bool InstallGameBridge(string pathToGameExe, GraphicsAPITypes graphicsApi);
+        // Installs all necessary files for Game Bridge for the specified .exe file. Returns error message if an exception occurs.
+        public string InstallGameBridge(string pathToGameExe, GraphicsAPITypes graphicsApi);
         // Gets the install path of Simulated Reality from the registry.
         public string GetSRInstallPathFromRegistry();
         // Checks the presence of all the required .dll files for Game Bridge to work.
