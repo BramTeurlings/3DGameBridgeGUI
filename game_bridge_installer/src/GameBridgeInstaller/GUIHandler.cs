@@ -162,7 +162,8 @@ namespace GameBridgeInstaller
                         reshadeGraphicsApiArgument = "dxgi";
                         break;
                 }
-                Process process = Process.Start(ReshadeInstallerPath, "--headless --elevated --api " + reshadeGraphicsApiArgument + " " + pathToGameExe);
+                string cmdArguments = "--headless --elevated --api " + reshadeGraphicsApiArgument + " \"" + pathToGameExe + "\"";
+                Process process = Process.Start(ReshadeInstallerPath, cmdArguments);
                 if(!process.WaitForExit(10000))
                 {
                     return "The Reshade installer has timed out.";
