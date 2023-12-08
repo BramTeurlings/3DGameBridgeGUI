@@ -35,6 +35,7 @@
             browseBtn = new Button();
             graphicsApiCmb = new ComboBox();
             graphicsApiLbl = new Label();
+            uninstallBtn = new Button();
             SuspendLayout();
             // 
             // pathToExeLbl
@@ -59,7 +60,7 @@
             installBtn.Location = new Point(12, 144);
             installBtn.Margin = new Padding(3, 3, 9, 6);
             installBtn.Name = "installBtn";
-            installBtn.Size = new Size(346, 23);
+            installBtn.Size = new Size(163, 23);
             installBtn.TabIndex = 3;
             installBtn.Text = "Install";
             installBtn.UseVisualStyleBackColor = true;
@@ -70,7 +71,7 @@
             browseBtn.Location = new Point(283, 50);
             browseBtn.Margin = new Padding(3, 3, 9, 3);
             browseBtn.Name = "browseBtn";
-            browseBtn.Size = new Size(75, 23);
+            browseBtn.Size = new Size(73, 23);
             browseBtn.TabIndex = 1;
             browseBtn.Text = "Browse";
             browseBtn.UseVisualStyleBackColor = true;
@@ -96,6 +97,17 @@
             graphicsApiLbl.TabIndex = 4;
             graphicsApiLbl.Text = "Please select a game's graphics API below";
             // 
+            // uninstallBtn
+            // 
+            uninstallBtn.Location = new Point(195, 144);
+            uninstallBtn.Margin = new Padding(3, 3, 9, 6);
+            uninstallBtn.Name = "uninstallBtn";
+            uninstallBtn.Size = new Size(163, 23);
+            uninstallBtn.TabIndex = 4;
+            uninstallBtn.Text = "Uninstall";
+            uninstallBtn.UseVisualStyleBackColor = true;
+            uninstallBtn.Click += uninstallBtn_Click;
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -103,6 +115,7 @@
             AutoSize = true;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
             ClientSize = new Size(456, 326);
+            Controls.Add(uninstallBtn);
             Controls.Add(graphicsApiLbl);
             Controls.Add(graphicsApiCmb);
             Controls.Add(browseBtn);
@@ -123,5 +136,6 @@
         private Button browseBtn;
         private ComboBox graphicsApiCmb;
         private Label graphicsApiLbl;
+        private Button uninstallBtn;
     }
 }

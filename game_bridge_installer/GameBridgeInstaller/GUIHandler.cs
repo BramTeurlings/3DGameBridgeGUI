@@ -103,8 +103,12 @@ namespace GameBridgeInstaller
 
         public string InstallGameBridge(string pathToGameExe, GraphicsAPITypes graphicsApi)
         {
-            // Split exe name off from path
+            // Split exe name off from path.
             string gameExeName = pathToGameExe.Substring(pathToGameExe.LastIndexOf("\\"), pathToGameExe.Length - pathToGameExe.LastIndexOf("\\"));
+            // Cut the '.exe' part off the gameExeName.
+            string gameExeNameWithoutExtension = gameExeName.Split('.')[0];
+            // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
+            string gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
             // First, copy all required SR files to the target path.
             try
@@ -122,7 +126,7 @@ namespace GameBridgeInstaller
                 {
                     try
                     {
-                        File.Delete(pathToGameExe + "\\bin\\" + dllName);
+                        File.Delete(gameExeFolderPath + "\\bin\\" + dllName);
                     }
                     catch { }
                 }
@@ -132,7 +136,6 @@ namespace GameBridgeInstaller
             // Copy the srReshade addon
             try
             {
-                // Todo: Fix this tomorrow
                 File.Copy(SRAddonPath, pathToGameExe.Substring(0, pathToGameExe.Length - gameExeName.Length) + "\\" + SRAddonPath.Substring(SRAddonPath.LastIndexOf("\\"), SRAddonPath.Length - SRAddonPath.LastIndexOf("\\")), true);
             }
             catch (Exception ex)
@@ -163,6 +166,7 @@ namespace GameBridgeInstaller
                         reshadeGraphicsApiArgument = "dxgi";
                         break;
                 }
+                // Todo: Get the return code from the ReShade installer in case it fails.
                 string cmdArguments = "--headless --elevated --api " + reshadeGraphicsApiArgument + " \"" + pathToGameExe + "\"";
                 Process process = Process.Start(ReshadeInstallerPath, cmdArguments);
                 if(!process.WaitForExit(10000))
@@ -174,11 +178,6 @@ namespace GameBridgeInstaller
             {
                 return "An exception occured while installing ReShade:\n\n" + ex.Message;
             }
-
-            // Cut the '.exe' part off the gameExeName
-            string gameExeNameWithoutExtension = gameExeName.Split('.')[0];
-            // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
-            string gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
             // Check for any Geo-11 fix files
             if (Directory.Exists(geo11FixPathPrefix + gameExeNameWithoutExtension))
@@ -289,6 +288,118 @@ namespace GameBridgeInstaller
 
                     return "An exception occured while copying the default SuperDepth3D fix:\n\n" + ex.Message;
                 }
+            }
+
+            return "";
+        }
+        public string UninstallGameBridge(string pathToGameExe, GraphicsAPITypes graphicsApi)
+        {
+            // Todo: Test this code
+            // Split exe name off from path.
+            string gameExeName = pathToGameExe.Substring(pathToGameExe.LastIndexOf("\\"), pathToGameExe.Length - pathToGameExe.LastIndexOf("\\"));
+            // Cut the '.exe' part off the gameExeName.
+            string gameExeNameWithoutExtension = gameExeName.Split('.')[0];
+            // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
+            string gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
+
+            // Remove any files that were potentially copied.
+            foreach (string dllName in SRDlls)
+            {
+                try
+                {
+                    File.Delete(gameExeFolderPath + dllName);
+                }
+                catch { }
+            }
+
+            // Remove the srReshade addon
+            try
+            {
+                File.Delete(gameExeFolderPath + SRAddonPath.Substring(SRAddonPath.LastIndexOf("\\"), SRAddonPath.Length - SRAddonPath.LastIndexOf("\\")));
+            }
+            catch { }
+
+            // Uninstall reshade with addon support
+            try
+            {
+                string reshadeGraphicsApiArgument = "";
+                switch (graphicsApi)
+                {
+                    case GraphicsAPITypes.DirectX9:
+                        reshadeGraphicsApiArgument = "d3d9";
+                        break;
+                    case GraphicsAPITypes.DirectX10_11_12:
+                        reshadeGraphicsApiArgument = "dxgi";
+                        break;
+                    case GraphicsAPITypes.OpenGL:
+                        reshadeGraphicsApiArgument = "opengl";
+                        break;
+                    case GraphicsAPITypes.Vulkan:
+                        reshadeGraphicsApiArgument = "vulkan";
+                        break;
+                    default:
+                        reshadeGraphicsApiArgument = "dxgi";
+                        break;
+                }
+
+                // Todo: Get the return code from the ReShade installer in case it fails.
+                // Specifiying Vulkan as graphics api as a workaround to an uninstaller bug in ReShade.
+                string cmdArguments = "--headless --elevated --api vulkan --state uninstall" + " \"" + pathToGameExe + "\"";
+                Process process = Process.Start(ReshadeInstallerPath, cmdArguments);
+                if (!process.WaitForExit(10000))
+                {
+                    return "The Reshade uninstaller has timed out.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "An exception occured while uninstalling ReShade:\n\n" + ex.Message;
+            }
+
+            // Check for any Geo-11 fix files
+            if (Directory.Exists(geo11FixPathPrefix + gameExeNameWithoutExtension))
+            {
+                geo11FixFound = true;
+            }
+
+            // Copy the geo-11 fix files (if Geo-11 fix is found)
+            if (geo11FixFound)
+            {
+                
+                // Delete all of the subdirectories of the geo-11 fix
+                foreach (string dirPath in Directory.GetDirectories(geo11FixPathPrefix + gameExeNameWithoutExtension, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        Directory.Delete(dirPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), true);
+                    }
+                    catch { }
+                }
+                // Delete all the files & Replaces any files with the same name
+                foreach (string filePath in Directory.GetFiles(geo11FixPathPrefix + gameExeNameWithoutExtension, "*.*", SearchOption.TopDirectoryOnly))
+                {
+                    // Check if file in game directory also exists inside Geo-11 fix directory.
+                    string selectedFileName = filePath.Substring(filePath.LastIndexOf("\\"), filePath.Length - filePath.LastIndexOf("\\")); 
+                    if (File.Exists(geo11FixPathPrefix + gameExeNameWithoutExtension + selectedFileName))
+                    {
+                        try
+                        {
+                            File.Delete(filePath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath));
+                        }
+                        catch { }
+                    }
+                }
+            }
+
+            // Check for any SuperDepth3D fix files, uninstall default reshadepreset.ini
+            if (File.Exists(gameExeFolderPath + "ReShadePreset.ini"))
+            {
+                // Remove ReShadePreset.ini
+                try
+                {
+                    File.Delete(gameExeFolderPath + "ReShadePreset.ini");
+                }
+                catch { }
             }
 
             return "";
