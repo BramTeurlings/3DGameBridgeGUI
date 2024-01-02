@@ -40,9 +40,9 @@ namespace GameBridgeInstaller
 
         private void disableButtons()
         {
-            browseBtn.Enabled = true;
-            installBtn.Enabled = true;
-            uninstallBtn.Enabled = true;
+            browseBtn.Enabled = false;
+            installBtn.Enabled = false;
+            uninstallBtn.Enabled = false;
         }
 
         private void installBtn_Click(object sender, EventArgs e)
@@ -63,7 +63,7 @@ namespace GameBridgeInstaller
             else
             {
                 // Install successful. Inform the user.
-                MessageBox.Show("Installation of Game Bridge was successfull.\n\nIf you require any extra files such as savegames, resolution fixes or mods, please make sure you install those now.", "Installation successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Installation of Game Bridge was successful.\n\nIf you require any extra files such as savegames, resolution fixes or mods, please make sure you install those now.", "Installation successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             enableButtons();

@@ -1,13 +1,5 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace GameBridgeInstaller
 {
@@ -199,25 +191,7 @@ namespace GameBridgeInstaller
             {
                 try
                 {
-                    // Create all of the subdirectories of the geo-11 fix
-                    foreach (string dirPath in Directory.GetDirectories(geo11FixPathPrefix + gameExeNameWithoutExtension, "*", SearchOption.AllDirectories))
-                    {
-                        Directory.CreateDirectory(dirPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath));
-                    }
-
-                    // Copy all the files & Replaces any files with the same name
-                    foreach (string newPath in Directory.GetFiles(geo11FixPathPrefix + gameExeNameWithoutExtension, "*.*", SearchOption.AllDirectories))
-                    {
-                        // First see if the file already exists.
-                        // For now, we only want to back up .dll and .exe files to avoid confusion.
-                        if (File.Exists(newPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath)) && newPath.Contains(".dll") || File.Exists(newPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath)) && newPath.Contains(".exe"))
-                        {
-                            // File exists, rename it so we can restore it during uninstallation.
-                            File.Move(newPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), newPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath) + srBackupExtensionPostfix, true);
-                        }
-
-                        File.Copy(newPath, newPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), true);
-                    }
+                    CopyAndBackupFiles(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath);
                 }
                 catch (Exception ex)
                 {
@@ -232,25 +206,7 @@ namespace GameBridgeInstaller
             {
                 try
                 {
-                    // Create all of the subdirectories of the SuperDepth3D shader
-                    foreach (string dirPath in Directory.GetDirectories(superDepth3DShaderPathPrefix, "*", SearchOption.AllDirectories))
-                    {
-                        Directory.CreateDirectory(dirPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix));
-                    }
-
-                    // Copy all the files & Replaces any files with the same name
-                    foreach (string newPath in Directory.GetFiles(superDepth3DShaderPathPrefix, "*.*", SearchOption.AllDirectories))
-                    {
-                        // First see if the file already exists.
-                        // For now, we only want to back up .dll and .exe files to avoid confusion.
-                        if (File.Exists(newPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix)) && newPath.Contains(".dll") || File.Exists(newPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix)) && newPath.Contains(".exe"))
-                        {
-                            // File exists, rename it so we can restore it during uninstallation.
-                            File.Move(newPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix), newPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix) + srBackupExtensionPostfix, true);
-                        }
-
-                        File.Copy(newPath, newPath.Replace(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix), true);
-                    }
+                    CopyAndBackupFiles(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix);
                 }
                 catch (Exception ex)
                 {
@@ -473,7 +429,7 @@ namespace GameBridgeInstaller
                     }
                 }
 
-                // Todo: This is a lot of nested loops, performance can certainly be improved! Also you can make a method for this duplicated code
+                // Todo: This is a lot of nested loops, performance can certainly be improved! Also you can make a method for this duplicated code > https://dimenco.atlassian.net/browse/GB-83
                 // Delete the directory if it's empty at this point.
                 foreach (string dirPath in Directory.GetDirectories(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, "*", SearchOption.AllDirectories))
                 {
@@ -579,6 +535,32 @@ namespace GameBridgeInstaller
             gameExeFolderPath = "";
             geo11FixFound = false;
             superDepth3DFixFound = false;
+        }
+
+        // Can throw an exception when it is unable to copy or move a file.
+        // pathToNewFiles: The contents of this path copied to the pathToFilesToBackup folder and files that have to be overwritten are instead renamed with a special postFix in order to back them up.
+        // pathToFilesToBackup: The target folder where the contents of pathToNewFiles are copied.
+        private void CopyAndBackupFiles(string pathToNewFiles, string pathToFilesToBackup)
+        {
+            // Create all of the subdirectories of the fix
+            foreach (string dirPath in Directory.GetDirectories(pathToNewFiles, "*", SearchOption.AllDirectories))
+            {
+                Directory.CreateDirectory(dirPath.Replace(pathToNewFiles, pathToFilesToBackup));
+            }
+
+            // Copy all the files & Replaces any files with the same name
+            foreach (string newPath in Directory.GetFiles(pathToNewFiles, "*.*", SearchOption.AllDirectories))
+            {
+                // First see if the file already exists.
+                // For now, we only want to back up .dll and .exe files to avoid confusion.
+                if (File.Exists(newPath.Replace(pathToNewFiles, pathToFilesToBackup)) && newPath.Contains(".dll") || File.Exists(newPath.Replace(pathToNewFiles, pathToFilesToBackup)) && newPath.Contains(".exe"))
+                {
+                    // File exists, rename it so we can restore it during uninstallation.
+                    File.Move(newPath.Replace(pathToNewFiles, pathToFilesToBackup), newPath.Replace(pathToNewFiles, pathToFilesToBackup) + srBackupExtensionPostfix, true);
+                }
+
+                File.Copy(newPath, newPath.Replace(pathToNewFiles, pathToFilesToBackup), true);
+            }
         }
     }
 }
