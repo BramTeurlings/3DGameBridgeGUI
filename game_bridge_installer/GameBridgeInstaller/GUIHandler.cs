@@ -230,25 +230,7 @@ namespace GameBridgeInstaller
                 // Copy the SuperDepth3D/Reshade configs
                 try
                 {
-                    // Create all of the subdirectories of the SuperDepth3D fix
-                    foreach (string dirPath in Directory.GetDirectories(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, "*", SearchOption.AllDirectories))
-                    {
-                        Directory.CreateDirectory(dirPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath));
-                    }
-
-                    // Copy all the files & Replaces any files with the same name
-                    foreach (string newPath in Directory.GetFiles(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, "*.*", SearchOption.AllDirectories))
-                    {
-                        // First see if the file already exists.
-                        // For now, we only want to back up .dll files to avoid confusion.
-                        if (File.Exists(newPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath)) && newPath.Contains(".dll"))
-                        {
-                            // File exists, rename it so we can restore it during uninstallation.
-                            File.Move(newPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), newPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath) + srBackupExtensionPostfix, true);
-                        }
-
-                        File.Copy(newPath, newPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), true);
-                    }
+                    CopyAndBackupFiles(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath);
                 }
                 catch (Exception ex)
                 {
@@ -264,25 +246,7 @@ namespace GameBridgeInstaller
                 // Copy the SuperDepth3D/Reshade configs
                 try
                 {
-                    // Create all of the subdirectories of the default SuperDepth3D fix
-                    foreach (string dirPath in Directory.GetDirectories(superDepth3DDefaultFixPathPrefix, "*", SearchOption.AllDirectories))
-                    {
-                        Directory.CreateDirectory(dirPath.Replace(superDepth3DDefaultFixPathPrefix, gameExeFolderPath));
-                    }
-
-                    // Copy all the files & Replaces any files with the same name
-                    foreach (string newPath in Directory.GetFiles(superDepth3DDefaultFixPathPrefix, "*.*", SearchOption.AllDirectories))
-                    {
-                        // First see if the file already exists.
-                        // For now, we only want to back up .dll files to avoid confusion.
-                        if (File.Exists(newPath.Replace(superDepth3DDefaultFixPathPrefix, gameExeFolderPath)) && newPath.Contains(".dll"))
-                        {
-                            // File exists, rename it so we can restore it during uninstallation.
-                            File.Move(newPath.Replace(superDepth3DDefaultFixPathPrefix, gameExeFolderPath), newPath.Replace(superDepth3DDefaultFixPathPrefix, gameExeFolderPath) + srBackupExtensionPostfix, true);
-                        }
-
-                        File.Copy(newPath, newPath.Replace(superDepth3DDefaultFixPathPrefix, gameExeFolderPath), true);
-                    }
+                    CopyAndBackupFiles(superDepth3DDefaultFixPathPrefix, gameExeFolderPath);
                 }
                 catch (Exception ex)
                 {
@@ -400,7 +364,10 @@ namespace GameBridgeInstaller
                             Directory.Delete(dirPath.Replace(geo11FixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), true);
                         }
                     }
-                    catch { }
+                    catch (DirectoryNotFoundException ex)
+                    {
+                        Console.WriteLine("Warning: a directory could not be found during a delete operation:\n\n" + ex.Message);
+                    }
                 }
             }
 
@@ -440,7 +407,10 @@ namespace GameBridgeInstaller
                             Directory.Delete(dirPath.Replace(superDepth3DFixPathPrefix + gameExeNameWithoutExtension, gameExeFolderPath), true);
                         }
                     }
-                    catch { }
+                    catch (DirectoryNotFoundException ex)
+                    {
+                        Console.WriteLine("Warning: a directory could not be found during a delete operation:\n\n" + ex.Message);
+                    }
                 }
             }
 

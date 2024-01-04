@@ -1,5 +1,3 @@
-using System.Windows.Forms;
-
 namespace GameBridgeInstaller
 {
     public partial class Main : Form
