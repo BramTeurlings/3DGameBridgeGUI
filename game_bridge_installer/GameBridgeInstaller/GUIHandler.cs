@@ -202,21 +202,21 @@ namespace GameBridgeInstaller
 
                     return "An exception occured while copying the geo-11 fix:\n\n" + ex.Message;
                 }
-            } else // Copy the SuperDepth3D files (if no Geo-11 fix was found)
-            {
-                try
-                {
-                    CopyAndBackupFiles(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix);
-                }
-                catch (Exception ex)
-                {
-                    // Todo: Implement cleaning up the shader if copying fails
-                    Console.WriteLine("WARNING: Cleaning up SuperDepth3D shader files not finished yet!");
-                    Console.WriteLine("Restoring backed up SuperDepth3D shader files...");
-                    RestoreBackedUpFiles(gameExeFolderPath);
+            }
 
-                    return "An exception occured while copying the SuperDepth3D shader:\n\n" + ex.Message;
-                }
+            // Copy the SuperDepth3D files (to ensure we have at least one shader in ReShade)
+            try
+            {
+                CopyAndBackupFiles(superDepth3DShaderPathPrefix, gameExeFolderPath + reshadeShaderPathPrefix);
+            }
+            catch (Exception ex)
+            {
+                // Todo: Implement cleaning up the shader if copying fails
+                Console.WriteLine("WARNING: Cleaning up SuperDepth3D shader files not finished yet!");
+                Console.WriteLine("Restoring backed up SuperDepth3D shader files...");
+                RestoreBackedUpFiles(gameExeFolderPath);
+
+                return "An exception occured while copying the SuperDepth3D shader:\n\n" + ex.Message;
             }
 
             // Check for any SuperDepth3D fix files, install default reshade(preset).ini if no fix is found
