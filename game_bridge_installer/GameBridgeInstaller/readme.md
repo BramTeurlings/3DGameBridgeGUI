@@ -44,6 +44,9 @@ When no pre-made SuperDepth3D fix can be found, a default configuration is insta
 Since we're using a local version of SuperDepth3D, it may be nice to update the SuperDepth3D shader once in a while. The path to the SuperDepth3D shader can be found here:
 **[currentDirectory]/SuperDepth3D/ReShade-Shaders**
 
+![image](https://github.com/BramTeurlings/3DGameBridgeGUI/assets/25816950/23c8725f-5f28-4101-8540-40447f8d0283)
+
+
 ## ReShade installer
 A ReShade installer with addon support must be present alongside the "GameBridgeInstaller.exe" file.
 
