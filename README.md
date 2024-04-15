@@ -1,4 +1,7 @@
 # 3DGameBridgeAPI
+> This project, initially started as a passion project, has spun-off from Leia Inc and is now standalone.
+Thanks again to Leia Inc and former Dimenco for their support, we still strive to get SR in the hands of as many people as possible out of love for the technology.
+
 This repo contains our Game Bridge API. This API has functions for supporting the development of companion apps such as a GUI and game managers.
 For the sake of modularity and compatibility, all GUI implementations should use this API specification.
 
