@@ -1,5 +1,8 @@
 ﻿using Microsoft.Win32;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace GameBridgeInstaller
 {
@@ -114,11 +117,26 @@ namespace GameBridgeInstaller
             // First, copy all required SR files to the target path.
             try
             {
-                foreach (string dllName in SRDlls)
+                // Check the name of the addon with a regex to see if SR DLLs need to be copied or not.
+                bool copySrDlls = false;
+                string fileName = SRAddonPath.Substring(SRAddonPath.LastIndexOf('\\') + 1);
+                string pattern = @"(\d+\.\d+\.\d+)";
+                // Get the version number of the addon from the addon name and check if it's a version where we still need to copy addons.
+                MatchCollection matches = Regex.Matches(fileName, pattern);
+                string matchedString = matches[matches.Count - 1].Value;
+                string matchedSplitString = matchedString.Replace(".", "");
+                if (int.Parse(matchedSplitString) <= 030)
                 {
-                    File.Copy(SRInstallpath + "\\bin\\" + dllName, pathToGameExe.Substring(0, pathToGameExe.Length - gameExeName.Length) + "\\" + dllName, true);
+                    copySrDlls = true;
                 }
 
+                if (copySrDlls)
+                {
+                    foreach (string dllName in SRDlls)
+                    {
+                        File.Copy(SRInstallpath + "\\bin\\" + dllName, pathToGameExe.Substring(0, pathToGameExe.Length - gameExeName.Length) + "\\" + dllName, true);
+                    }
+                }
             }
             catch (Exception ex)
             {
