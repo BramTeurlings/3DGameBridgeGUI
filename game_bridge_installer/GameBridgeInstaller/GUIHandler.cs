@@ -616,35 +616,6 @@ namespace GameBridgeInstaller
             }
         }
 
-        // Checks if a file at a given path is 32 or 64-bit.
-        //static bool Is64BitExecutableUsingWinAPI(string filePath)
-        //{
-        //    // Open the file using the Windows API
-        //    using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-        //    using (var reader = new System.IO.BinaryReader(stream))
-        //    {
-        //        // Check the PE header offset
-        //        stream.Position = 0x3C;
-        //        int peOffset = reader.ReadInt32();
-
-        //        // Move to the PE header
-        //        stream.Position = peOffset;
-
-        //        // Check for "PE\0\0" signature
-        //        if (reader.ReadUInt32() != 0x00004550)
-        //            throw new BadImageFormatException("Not a valid PE file");
-
-        //        // Skip 4 bytes (machine type is right after)
-        //        stream.Position += 4;
-
-        //        // Read the machine type
-        //        ushort machine = reader.ReadUInt16();
-
-        //        // Check if the machine type indicates 64-bit
-        //        return machine == 0x8664 || machine == 0x0200; // AMD64 or IA64
-        //    }
-        //}
-
         enum PlatformFile : uint
         {
             Unknown = 0,
