@@ -122,7 +122,7 @@ namespace GameBridgeInstaller
             if (!handler.CheckIfSRInstallIsValid(handler.GetSRInstallPathFromRegistry()))
             {
                 // SR Install invalid
-                MessageBox.Show("Couldn't find Simulated Reality install. Please (re)install the SR Platform:\n(https://www.srappstore.com/)", "SR install not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Couldn't find Simulated Reality install. Please (re)install the SR Platform:\n(https://github.com/LeiaInc/leiainc.github.io/tree/master/SRSDK)", "SR install not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 enableButtons();
                 return false;
             }
