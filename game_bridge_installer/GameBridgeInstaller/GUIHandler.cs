@@ -10,6 +10,7 @@ namespace GameBridgeInstaller
     {
         bool geo11FixFound = false;
         bool superDepth3DFixFound = false;
+        bool isGame64Bit = true;
 
         string gameExeName = "";
         string gameExeNameWithoutExtension = "";
@@ -26,6 +27,7 @@ namespace GameBridgeInstaller
         string SRAddonPath = "";
         string ReshadeInstallerPath = "";
         List<string> SRDlls = new List<string>() { "DimencoWeaving.dll", "glog.dll", "opencv_world343.dll", "SimulatedRealityCore.dll", "SimulatedRealityDirectX.dll", "SimulatedRealityDisplays.dll", "SimulatedRealityFacetrackers.dll" };
+        List<string> SRDlls32 = new List<string>() { "DimencoWeaving32.dll", "glog.dll", "opencv_world343.dll", "SimulatedRealityCore32.dll", "SimulatedRealityDirectX32.dll", "SimulatedRealityDisplays32.dll", "SimulatedRealityFacetrackers32.dll" };
 
         public bool CheckIfReShadeInstallerPresent()
         {
@@ -66,9 +68,26 @@ namespace GameBridgeInstaller
             return false;
         }
 
+        // Gets the DLLs that we expect to be present based on the target platform.
+        // By default it assumes 64-bit but this changes after CheckIfSRInstallIsValid() is called.
+        private List<string> getSRDlls()
+        {
+            List<string> dllList = new List<string>();
+            if (isGame64Bit)
+            {
+                dllList = SRDlls;
+            }
+            else
+            {
+                dllList = SRDlls32;
+            }
+            return dllList;
+        }
+
         public bool CheckIfSRInstallIsValid(string SRInstallPath)
         {
-            foreach (string file in SRDlls)
+            // Check which DLLs we need based on the platform
+            foreach (string file in getSRDlls())
             {
                 if (!File.Exists(SRInstallPath + "\\bin\\" + file))
                 {
@@ -79,20 +98,63 @@ namespace GameBridgeInstaller
             return true;
         }
 
+        private string GetSRPathFromRegistry(RegistryView registryViewWithPlatform)
+        {
+            using (RegistryKey key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryViewWithPlatform))
+            {
+                var subKey = "SOFTWARE\\Dimenco\\Simulated Reality";
+                using (var finalKey = Registry.LocalMachine.OpenSubKey(subKey, false)) // False means read only here.
+                {
+                    var s = finalKey?.GetValue("") as string;
+                    if (s != null)
+                    {
+                        return s;
+                    }
+                }
+            }
+            return "";
+        }
+
         public string GetSRInstallPathFromRegistry()
         {
             try
             {
-                var subKey = "SOFTWARE\\Dimenco\\Simulated Reality";
-                using (var key = Registry.LocalMachine.OpenSubKey(subKey, false)) // False means read only here.
+                // Check if the SR registries for both 64 and 32-bit exist.
+                RegistryView registryViewWithPlatform;
+                if (gameExeFolderPath == "" || gameExeName == "")
                 {
-                    var s = key?.GetValue("") as string;
-                    if (s != null)
+                    // Returns immediately after checking if both registry values are present.
+                    registryViewWithPlatform = RegistryView.Registry32;
+                    if (GetSRPathFromRegistry(registryViewWithPlatform) != "")
                     {
-                        SRInstallpath = s;
-                        return s;
+                        // We should always check 64-bit by default because the is64Bit bool at the top assumes that the software is 64-bit initially.
+                        registryViewWithPlatform = RegistryView.Registry64;
+                        if (GetSRPathFromRegistry(registryViewWithPlatform) != "")
+                        {
+                            return GetSRPathFromRegistry(registryViewWithPlatform);
+                        }
                     }
+                    return "";
                 }
+                // Open the registry key with a 64 or 32-bit view depending on the target .exe
+                else if (GetPlatformFromFile(gameExeFolderPath + gameExeName) == PlatformFile.x86)
+                {
+                    isGame64Bit = false;
+                    registryViewWithPlatform = RegistryView.Registry32;
+                }
+                else
+                {
+                    registryViewWithPlatform = RegistryView.Registry64;
+                }
+
+                // Set the SRInstallPath only if we had a gameExeFolderPath.
+                string s = GetSRPathFromRegistry(registryViewWithPlatform);
+                if (s != "")
+                {
+                    SRInstallpath = s;
+                }
+
+                return s;
             }
             catch (Exception ex)
             {
@@ -114,6 +176,9 @@ namespace GameBridgeInstaller
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
+            // Double check the SR Install Path
+            GetSRInstallPathFromRegistry();
+
             // First, copy all required SR files to the target path.
             try
             {
@@ -132,7 +197,7 @@ namespace GameBridgeInstaller
 
                 if (copySrDlls)
                 {
-                    foreach (string dllName in SRDlls)
+                    foreach (string dllName in getSRDlls())
                     {
                         File.Copy(SRInstallpath + "\\bin\\" + dllName, pathToGameExe.Substring(0, pathToGameExe.Length - gameExeName.Length) + "\\" + dllName, true);
                     }
@@ -141,7 +206,7 @@ namespace GameBridgeInstaller
             catch (Exception ex)
             {
                 // Remove any files that were potentially copied.
-                foreach (string dllName in SRDlls)
+                foreach (string dllName in getSRDlls())
                 {
                     try
                     {
@@ -293,7 +358,7 @@ namespace GameBridgeInstaller
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
             // Remove any files that were potentially copied.
-            foreach (string dllName in SRDlls)
+            foreach (string dllName in getSRDlls())
             {
                 try
                 {
@@ -548,6 +613,66 @@ namespace GameBridgeInstaller
                 }
 
                 File.Copy(newPath, newPath.Replace(pathToNewFiles, pathToFilesToBackup), true);
+            }
+        }
+
+        // Checks if a file at a given path is 32 or 64-bit.
+        //static bool Is64BitExecutableUsingWinAPI(string filePath)
+        //{
+        //    // Open the file using the Windows API
+        //    using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+        //    using (var reader = new System.IO.BinaryReader(stream))
+        //    {
+        //        // Check the PE header offset
+        //        stream.Position = 0x3C;
+        //        int peOffset = reader.ReadInt32();
+
+        //        // Move to the PE header
+        //        stream.Position = peOffset;
+
+        //        // Check for "PE\0\0" signature
+        //        if (reader.ReadUInt32() != 0x00004550)
+        //            throw new BadImageFormatException("Not a valid PE file");
+
+        //        // Skip 4 bytes (machine type is right after)
+        //        stream.Position += 4;
+
+        //        // Read the machine type
+        //        ushort machine = reader.ReadUInt16();
+
+        //        // Check if the machine type indicates 64-bit
+        //        return machine == 0x8664 || machine == 0x0200; // AMD64 or IA64
+        //    }
+        //}
+
+        enum PlatformFile : uint
+        {
+            Unknown = 0,
+            x86 = 1,
+            x64 = 2
+        }
+        static PlatformFile GetPlatformFromFile(string filePath)
+        {
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (BinaryReader br = new BinaryReader(fs))
+            {
+                fs.Seek(0x3C, SeekOrigin.Begin);
+                int peOffset = br.ReadInt32();
+                fs.Seek(peOffset, SeekOrigin.Begin);
+                uint peHead = br.ReadUInt32();
+
+                if (peHead != 0x00004550)
+                    return PlatformFile.Unknown;
+
+                fs.Seek(peOffset + 4, SeekOrigin.Begin);
+                ushort machine = br.ReadUInt16();
+
+                if (machine == 0x014c) // IMAGE_FILE_MACHINE_I386
+                    return PlatformFile.x86;
+                else if (machine == 0x8664) // IMAGE_FILE_MACHINE_IA64 or IMAGE_FILE_MACHINE_AMD64
+                    return PlatformFile.x64;
+                else
+                    return PlatformFile.Unknown;
             }
         }
     }
