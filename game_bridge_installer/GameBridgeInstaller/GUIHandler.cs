@@ -101,6 +101,10 @@ namespace GameBridgeInstaller
             using (RegistryKey key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryViewWithPlatform))
             {
                 var subKey = "SOFTWARE\\Dimenco\\Simulated Reality";
+                if (registryViewWithPlatform == RegistryView.Registry32)
+                {
+                    subKey += "32";
+                }
                 using (var finalKey = Registry.LocalMachine.OpenSubKey(subKey, false)) // False means read only here.
                 {
                     var s = finalKey?.GetValue("") as string;
