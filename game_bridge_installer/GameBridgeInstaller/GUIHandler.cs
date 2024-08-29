@@ -50,7 +50,15 @@ namespace GameBridgeInstaller
         {
             try
             {
-                string[] files = System.IO.Directory.GetFiles(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "srReshade*.addon", System.IO.SearchOption.TopDirectoryOnly);
+                string addon_name;
+                if (isGame64Bit)
+                {
+                    addon_name = "srReshade*.addon";
+                } else
+                {
+                    addon_name = "srReshade*.addon32";
+                }
+                string[] files = System.IO.Directory.GetFiles(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), addon_name, System.IO.SearchOption.TopDirectoryOnly);
                 if (files.Length > 0)
                 {
                     // Reshade addon is present
@@ -358,6 +366,9 @@ namespace GameBridgeInstaller
             gameExeNameWithoutExtension = gameExeName.Split('.')[0];
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
+
+            // Double check the SR Install Path
+            GetSRInstallPathFromRegistry();
 
             // Remove any files that were potentially copied.
             foreach (string dllName in getSRDlls())
