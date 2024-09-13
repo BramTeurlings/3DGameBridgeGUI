@@ -70,6 +70,7 @@ namespace GameBridgeInstaller
                     {
                         if (files[i].Contains(".addon" + AddonPostfix)) {
                             SRAddonPath = files[i];
+                            return true;
                         }
                     }
                     SRAddonPath = files.First();

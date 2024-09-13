@@ -59,7 +59,7 @@ The ReShade installer must be formatted as follows:<br/>
 A srReshade.addon file must be present alongside the "GameBridgeInstaller.exe" file.
 
 The ReShade installer must be formatted as follows:<br/>
-**srReshade\*{versionNr}\*.addon**
+**srReshade\*{versionNr}\*.addon***
 
 **Note:** Make sure that the version of the srReshade.addon you are installing is compatible with the installed version of the SR Platform. A quick compatibility list is shown below:
 * SR Platform version < = 1.27.4 is compatible with:
