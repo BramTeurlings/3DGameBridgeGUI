@@ -50,7 +50,7 @@ namespace GameBridgeInstaller
         {
             try
             {
-                // Todo: Check if the platform is set, use that to find the correct addon file.
+                // Check if the platform is set, use that to find the correct addon file.
                 string[] files = System.IO.Directory.GetFiles(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "srReshade*.addon*", System.IO.SearchOption.TopDirectoryOnly);
                 if (files.Length > 0)
                 {
@@ -120,6 +120,10 @@ namespace GameBridgeInstaller
             using (RegistryKey key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryViewWithPlatform))
             {
                 var subKey = "SOFTWARE\\Dimenco\\Simulated Reality";
+                if (registryViewWithPlatform == RegistryView.Registry32)
+                {
+                    subKey += "32";
+                }
                 using (var finalKey = Registry.LocalMachine.OpenSubKey(subKey, false)) // False means read only here.
                 {
                     var s = finalKey?.GetValue("") as string;
@@ -376,6 +380,9 @@ namespace GameBridgeInstaller
             gameExeNameWithoutExtension = gameExeName.Split('.')[0];
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
+
+            // Double check the SR Install Path
+            GetSRInstallPathFromRegistry();
 
             // Remove any files that were potentially copied.
             foreach (string dllName in getSRDlls())
