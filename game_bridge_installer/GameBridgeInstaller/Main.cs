@@ -109,20 +109,20 @@ namespace GameBridgeInstaller
                 return false;
             }
 
-            // Check if ReShade addon is present, if not: show warning dialog and disable install button.
-            if (!handler.CheckIfReShadeAddonPresent())
-            {
-                // srReshade addon not found.
-                MessageBox.Show("Couldn't find the srReshade addon.\nPlease download one here:\n(https://github.com/JoeyAnthony/3DGameBridgeProjects)\nCopy it to the same folder as this program.", "srReshade addon not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                enableButtons();
-                return false;
-            }
-
             // Check if SR install is present/valid, if not: show warning dialog and disable install button.
             if (!handler.CheckIfSRInstallIsValid(handler.GetSRInstallPathFromRegistry()))
             {
                 // SR Install invalid
                 MessageBox.Show("Couldn't find Simulated Reality install. Please (re)install the SR Platform:\n(https://github.com/LeiaInc/leiainc.github.io/tree/master/SRSDK)", "SR install not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                enableButtons();
+                return false;
+            }
+
+            // Check if ReShade addon is present, if not: show warning dialog and disable install button.
+            if (!handler.CheckIfReShadeAddonPresent())
+            {
+                // srReshade addon not found.
+                MessageBox.Show("Couldn't find the srReshade addon.\nPlease download one here:\n(https://github.com/JoeyAnthony/3DGameBridgeProjects)\nCopy it to the same folder as this program.", "srReshade addon not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 enableButtons();
                 return false;
             }
