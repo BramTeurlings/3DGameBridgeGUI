@@ -196,7 +196,7 @@ namespace GameBridgeInstaller
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
-            // Double check the SR Install Path
+            // Double check the SR Install Path & Update the target platform + addon
             GetSRInstallPathFromRegistry();
 
             // First, copy all required SR files to the target path.
