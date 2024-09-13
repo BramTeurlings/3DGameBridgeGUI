@@ -50,10 +50,28 @@ namespace GameBridgeInstaller
         {
             try
             {
-                string[] files = System.IO.Directory.GetFiles(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "srReshade*.addon", System.IO.SearchOption.TopDirectoryOnly);
+                // Todo: Check if the platform is set, use that to find the correct addon file.
+                string[] files = System.IO.Directory.GetFiles(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "srReshade*.addon*", System.IO.SearchOption.TopDirectoryOnly);
                 if (files.Length > 0)
                 {
-                    // Reshade addon is present
+                    // Addons are present, checking for the requested one.
+                    String AddonPostfix = "";
+                    if (isGame64Bit)
+                    {
+                        AddonPostfix = "64";
+                    }
+                    else
+                    {
+                        AddonPostfix = "32";
+                    }
+
+                    // Check if an addon is available with the postfix we need, if not default to the first one.
+                    for (int i = 0; i < files.Length; i++)
+                    {
+                        if (files[i].Contains(".addon" + AddonPostfix)) {
+                            SRAddonPath = files[i];
+                        }
+                    }
                     SRAddonPath = files.First();
                     return true;
                 }
@@ -144,6 +162,9 @@ namespace GameBridgeInstaller
                 {
                     registryViewWithPlatform = RegistryView.Registry64;
                 }
+
+                // Update the target addon based on the platform the game is built for
+                CheckIfReShadeAddonPresent();
 
                 // Set the SRInstallPath only if we had a gameExeFolderPath.
                 string s = GetSRPathFromRegistry(registryViewWithPlatform);
