@@ -193,10 +193,11 @@ namespace GameBridgeInstaller
             // Reset global variables
             ResetGlobals();
 
-            // Split exe name off from path.
+            // Get the complete EXE string
             gameExeName = pathToGameExe.Substring(pathToGameExe.LastIndexOf("\\"), pathToGameExe.Length - pathToGameExe.LastIndexOf("\\"));
-            // Cut the '.exe' part off the gameExeName.
-            gameExeNameWithoutExtension = gameExeName.Split('.')[0];
+            // Get the name without .EXE appended
+            gameExeNameWithoutExtension = fetchRootGameName();
+
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
@@ -277,7 +278,7 @@ namespace GameBridgeInstaller
                 // Todo: Get the return code from the ReShade installer in case it fails.
                 string cmdArguments = "--headless --elevated --api " + reshadeGraphicsApiArgument + " \"" + pathToGameExe + "\"";
                 Process process = Process.Start(ReshadeInstallerPath, cmdArguments);
-                if(!process.WaitForExit(10000))
+                if (!process.WaitForExit(10000))
                 {
                     return "The Reshade installer has timed out.";
                 }
@@ -348,7 +349,8 @@ namespace GameBridgeInstaller
 
                     return "An exception occured while copying the SuperDepth3D fix:\n\n" + ex.Message;
                 }
-            } else if (!superDepth3DFixFound && !geo11FixFound)
+            }
+            else if (!superDepth3DFixFound && !geo11FixFound)
             {
                 // Copy the SuperDepth3D/Reshade configs
                 try
@@ -374,10 +376,10 @@ namespace GameBridgeInstaller
             // Reset global variables
             ResetGlobals();
 
-            // Split exe name off from path.
+            // Get the complete EXE string
             gameExeName = pathToGameExe.Substring(pathToGameExe.LastIndexOf("\\"), pathToGameExe.Length - pathToGameExe.LastIndexOf("\\"));
-            // Cut the '.exe' part off the gameExeName.
-            gameExeNameWithoutExtension = gameExeName.Split('.')[0];
+            // Get the name without .EXE appended
+            gameExeNameWithoutExtension = fetchRootGameName();
             // Cut the '.exe' part off the pathToGameExe. Pushed 1 index back to include the '\\' characters.
             gameExeFolderPath = pathToGameExe.Substring(0, pathToGameExe.LastIndexOf("\\") + 1);
 
@@ -540,6 +542,22 @@ namespace GameBridgeInstaller
 
             return "";
         }
+        
+        /// <summary>
+        /// Fetches the name of the game, including special cases where the game name contains a period, before  ".EXE"
+        /// </summary>
+        /// <returns>The sanitized EXE name, without ".exe" appended</returns>
+        private string fetchRootGameName()
+        {
+            string result;
+
+            string[] tempExeNameArr = gameExeName.Split('.');
+            // if true, that means we have more than one period in the filename so we should grab everything but the last index and combine it
+            // otherwise, return the first index as normal
+            result = tempExeNameArr.Length > 1 ? String.Join('.', tempExeNameArr.Take(tempExeNameArr.Length - 1)) : tempExeNameArr[0];
+
+            return result;
+        }
 
         public string OpenWindowsExplorerDialog()
         {
@@ -553,7 +571,7 @@ namespace GameBridgeInstaller
             {
                 // Get the path of specified file
                 return fd.FileName;
-            } 
+            }
             else
             {
                 return "";
