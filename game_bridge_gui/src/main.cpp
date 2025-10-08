@@ -4,8 +4,8 @@
 
 int main() {
     // test
-    gamebridge::init_api();
-    gamebridge::subscribe_to_pocess_events();
+    game_bridge::init_api();
+    game_bridge::subscribe_to_pocess_events();
 
     while (1) {
         Sleep(1000);

@@ -1,8 +1,8 @@
 #include "wmicommunication.h"
-#include <Windows.h>
-#include <iostream>
-#include <comdef.h>
 
+#include <iostream>
+#include <chrono>
+#include <comdef.h>
 #pragma comment(lib, "wbemuuid.lib")
 
 ULONG EventSink::AddRef()
@@ -29,28 +29,97 @@ HRESULT EventSink::QueryInterface(REFIID riid, void** ppv)
     else return E_NOINTERFACE;
 }
 
+//HRESULT EventSink::Indicate(long lObjectCount, IWbemClassObject** apObjArray)
+//{
+//    HRESULT hres = S_OK;
+//
+//    for (int i = 0; i < lObjectCount; i++)
+//    {
+//        printf("Event occurred\n");
+//    }
+//
+//    return WBEM_S_NO_ERROR;
+//}
 
-HRESULT EventSink::Indicate(long lObjectCount,
-    IWbemClassObject** apObjArray)
+HRESULT EventSink::Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
 {
-    HRESULT hres = S_OK;
-
-    for (int i = 0; i < lObjectCount; i++)
+    auto time_before = std::chrono::high_resolution_clock::now();
+    for (LONG i = 0; i < lObjectCount; i++)
     {
-        SAFEARRAY arr;
-        VARIANT* value = new VARIANT;
-        BSTR strClassProp = SysAllocString(L"Name");
+        Win32ProcessData process_data;
 
-        HRESULT hres = apObjArray[i]->Get(strClassProp, 0, value, NULL, 0);
-        if (hres == ERROR_SUCCESS) {
+        VARIANT vtProp {};
+		if (apObjArray[i]->Get(L"TargetInstance", 0, &vtProp, 0, 0) >= 0)
+		{
+			IWbemClassObject* pProcessObj = nullptr;
+			if (vtProp.punkVal->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&pProcessObj)) >= 0)
+			{
+				// Get process data
+                VARIANT vtProcessId {};
+				if (pProcessObj->Get(L"ProcessId", 0, &vtProcessId, 0, 0) >= 0 && vtProcessId.punkVal != nullptr)
+				{
+					process_data.pid = vtProcessId.intVal;
+				}
 
-            VariantClear(value);
-        }
-        printf("Event occurred\n");
+                VARIANT vtName {};
+				if (pProcessObj->Get(L"ExecutablePath", 0, &vtName, 0, 0) >= 0 && vtName.punkVal != nullptr)
+				{
+					size_t char_number = 0;
+					std::wstring wexe_path(vtName.bstrVal);
+					CHAR exe_path[MAX_PATH];
+					errno_t err = wcstombs_s(&char_number, exe_path, MAX_PATH, wexe_path.c_str(), _TRUNCATE);
+					if (err != EINVAL)
+					{
+						process_data.executable_path = exe_path;
+					}
+					else
+					{
+						wprintf(L"Process detection: Couldn't convert executable path to wstring");
+					}
+				}
+
+                // Add message to queue before releasing pointers
+                if (process_data.pid > 0 && !process_data.executable_path.empty())
+                {
+                    message_queue.push(process_data);
+                    semaphore_message_queue.notify();
+                }
+                else
+                {
+					wprintf(L"Couldn't enqueue message from wmi\n");
+				}
+
+				auto time_after = std::chrono::high_resolution_clock::now();
+				std::cout << "ms time of Indicate: " << std::chrono::duration_cast<std::chrono::microseconds>(time_after - time_before).count() << "\n";
+
+				VariantClear(&vtProcessId);
+				VariantClear(&vtName);
+			}
+			// Delete process object
+			pProcessObj->Release();
+
+			// Delete variant
+			VariantClear(&vtProp);
+		}
+
+        // Todo check memory leak in this function
+        // This statement makes the thread throw errors and this is not used un Microsoft examples though
+		//apObjArray[i]->Release();
     }
 
-    return WBEM_S_NO_ERROR;
+
+	return WBEM_S_NO_ERROR;
 }
+
+//// Get the main window handle of the process
+//HWND hWnd = FindWindowW(nullptr, vtName.bstrVal);
+//if (hWnd != nullptr)
+//{
+//    std::cout << "Window handle: " << hWnd << std::endl;
+//}
+//else
+//{
+//    std::cerr << "Failed to find the main window handle." << std::endl;
 
 HRESULT EventSink::SetStatus(
     /* [in] */ LONG lFlags,

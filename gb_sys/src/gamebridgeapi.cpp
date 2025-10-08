@@ -2,6 +2,7 @@
 #include <iostream>
 
 namespace game_bridge {
+
     GAME_BRIDGE_API void init_api()
     {
         std::cout << "Initializing events" << std::endl;

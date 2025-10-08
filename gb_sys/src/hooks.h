@@ -1,5 +1,8 @@
 #pragma once
-#include "wmicommunication.h"
+
+#include <Windows.h>
+#include <Psapi.h>
+#include <iostream>
 
 #ifdef GAME_BRIDGE_API_EXPORTS
 #define GAME_BRIDGE_API __declspec(dllexport)
@@ -19,3 +22,7 @@ namespace game_bridge {
 
     extern "C" GAME_BRIDGE_API void inject_into_process();
 }
+
+extern "C" GAME_BRIDGE_API void InstallHook();
+extern "C" GAME_BRIDGE_API void UninstallHook();
+extern "C" GAME_BRIDGE_API LRESULT CALLBACK HookCallback(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam);
