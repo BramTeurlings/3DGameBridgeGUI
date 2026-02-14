@@ -1,4 +1,5 @@
 #pragma once
+#include "wmicommunication.h"
 
 #ifdef GAME_BRIDGE_API_EXPORTS
 #define GAME_BRIDGE_API __declspec(dllexport)
@@ -6,7 +7,7 @@
 #define GAME_BRIDGE_API __declspec(dllimport)
 #endif
 
-namespace gamebridge {
+namespace game_bridge {
     extern "C" GAME_BRIDGE_API void init_api();
 
     // Subsribe to process events

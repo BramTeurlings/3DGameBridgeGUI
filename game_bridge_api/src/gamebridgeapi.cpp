@@ -1,15 +1,10 @@
 #include "gamebridgeapi.h"
 #include <iostream>
 
-#include "wmicommunication.h"
-
-namespace gamebridge {
-    WMICommunication wmi("");
-
+namespace game_bridge {
     GAME_BRIDGE_API void init_api()
     {
         std::cout << "Initializing events" << std::endl;
-        wmi.initializeObjects("");
     }
     GAME_BRIDGE_API void subscribe_to_pocess_events()
     {
